@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { LogOut, Sprout } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { SyncIndicator, ToastContainer } from '@/components/shared'
@@ -14,6 +15,11 @@ export function AppShell() {
   const user = useAuthStore((s) => s.user)
   const role = useAuthStore((s) => s.role)
   const signOut = useAuthStore((s) => s.signOut)
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuario'
 
