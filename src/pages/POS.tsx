@@ -31,8 +31,8 @@ export default function POS() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Punto de Venta</h1>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        {/* Búsqueda de productos */}
+      {/* Desktop: two columns */}
+      <div className="hidden gap-4 lg:grid lg:grid-cols-5">
         <div className="lg:col-span-3">
           <ProductSearch
             products={products ?? []}
@@ -41,10 +41,23 @@ export default function POS() {
             onSelect={handleAddProduct}
           />
         </div>
-
-        {/* Carrito */}
         <div className="lg:col-span-2">
           <Cart onCheckout={() => setShowCheckout(true)} />
+        </div>
+      </div>
+
+      {/* Mobile: cart sticky top, products below */}
+      <div className="lg:hidden">
+        <div className="sticky top-[57px] z-30 -mx-4 max-h-[45vh] overflow-y-auto bg-primary-50 px-4 pb-2">
+          <Cart onCheckout={() => setShowCheckout(true)} />
+        </div>
+        <div className="mt-3">
+          <ProductSearch
+            products={products ?? []}
+            search={search}
+            onSearchChange={setSearch}
+            onSelect={handleAddProduct}
+          />
         </div>
       </div>
 

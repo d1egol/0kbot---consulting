@@ -27,7 +27,7 @@ export function ProductSearch({ products, search, onSearchChange, onSelect }: Pr
           onChange={onSearchChange}
           onSubmit={handleSubmit}
           placeholder="Buscar producto... (Enter para agregar)"
-          autoFocus
+          autoFocus={false}
         />
       </div>
 
