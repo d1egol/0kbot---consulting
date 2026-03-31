@@ -8,12 +8,14 @@ import Purchases from '@/pages/Purchases'
 import POS from '@/pages/POS'
 import Shrinkage from '@/pages/Shrinkage'
 import Maintainers from '@/pages/Maintainers'
+import Dashboard from '@/pages/Dashboard'
 import NotFound from '@/pages/NotFound'
 
 function DefaultRedirect() {
   const role = useAuthStore((s) => s.role)
   if (role === 'cashier') return <Navigate to="/pos" replace />
   if (role === 'buyer') return <Navigate to="/purchases" replace />
+  if (role === 'admin') return <Navigate to="/dashboard" replace />
   return <Navigate to="/inventory" replace />
 }
 
@@ -31,6 +33,14 @@ export default function App() {
       >
         <Route index element={<DefaultRedirect />} />
 
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="inventory"
           element={

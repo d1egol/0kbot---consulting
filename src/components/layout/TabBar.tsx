@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Truck, Package, AlertTriangle, Settings } from 'lucide-react'
+import { ShoppingCart, Truck, Package, AlertTriangle, Settings, LayoutDashboard } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import type { UserRole } from '@/lib/types'
 import { cn } from '@/utils/cn'
@@ -13,6 +13,7 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
   { path: '/pos', label: 'Vender', icon: ShoppingCart, roles: ['cashier', 'admin'] },
   { path: '/purchases', label: 'Compras', icon: Truck, roles: ['buyer', 'admin'] },
   { path: '/inventory', label: 'Inventario', icon: Package, roles: ['admin', 'buyer'] },
