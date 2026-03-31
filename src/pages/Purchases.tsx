@@ -11,6 +11,7 @@ export default function Purchases() {
   const [search, setSearch] = useState('')
   const [lines, setLines] = useState<PurchaseLineData[]>([])
   const [tab, setTab] = useState<'order' | 'history'>('order')
+  const [mobileTab, setMobileTab] = useState<'catalog' | 'order'>('catalog')
 
   const { data: products, isLoading } = useProducts(category, search)
 
@@ -87,27 +88,55 @@ export default function Purchases() {
             </div>
           </div>
 
-          {/* Mobile: form sticky top, catalog below */}
+          {/* Mobile: inner tabs para catálogo y pedido */}
           <div className="lg:hidden">
-            <div className="sticky top-[57px] z-30 -mx-4 max-h-[45vh] overflow-y-auto bg-primary-50 px-4 pb-2">
-              <PurchaseForm
-                lines={lines}
-                onLinesChange={setLines}
-                onClear={() => setLines([])}
-              />
+            <div className="flex rounded-lg bg-white p-1">
+              <button
+                onClick={() => setMobileTab('catalog')}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  mobileTab === 'catalog'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Catálogo
+              </button>
+              <button
+                onClick={() => setMobileTab('order')}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  mobileTab === 'order'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Pedido
+                {lines.length > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/25 text-xs">
+                    {lines.length}
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="mt-3">
-              <ProductCatalog
-                products={products ?? []}
-                isLoading={isLoading}
-                category={category}
-                search={search}
-                onCategoryChange={(c) => setCategory(c as ProductCategory | null)}
-                onSearchChange={setSearch}
-                onSelect={addProduct}
-                existingLines={lines}
-                mobileFullScroll
-              />
+            <div className="mt-4">
+              {mobileTab === 'catalog' ? (
+                <ProductCatalog
+                  products={products ?? []}
+                  isLoading={isLoading}
+                  category={category}
+                  search={search}
+                  onCategoryChange={(c) => setCategory(c as ProductCategory | null)}
+                  onSearchChange={setSearch}
+                  onSelect={addProduct}
+                  existingLines={lines}
+                  mobileFullScroll
+                />
+              ) : (
+                <PurchaseForm
+                  lines={lines}
+                  onLinesChange={setLines}
+                  onClear={() => setLines([])}
+                />
+              )}
             </div>
           </div>
         </>

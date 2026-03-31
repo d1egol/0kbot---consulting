@@ -18,7 +18,10 @@ export function AppShell() {
   const { pathname } = useLocation()
 
   useEffect(() => {
+    // Reiniciar scroll al navegar (cubre iOS Safari y Android)
     window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
   }, [pathname])
 
   const displayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuario'
@@ -58,7 +61,7 @@ export function AppShell() {
       <TabBar />
 
       {/* Main content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24 md:pb-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-6">
         <Outlet />
       </main>
 
