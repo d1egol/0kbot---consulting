@@ -15,6 +15,8 @@ interface PurchaseOrderInput {
     qty: number
     unit: string
     cost_price: number
+    purchase_unit?: string
+    conversion_factor?: number
   }[]
 }
 

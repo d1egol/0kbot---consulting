@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Eye, EyeOff } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { CategoryChips, SearchInput, Button, EmptyState } from '@/components/shared'
 import { ProductTable } from '@/components/inventory/ProductTable'
@@ -11,10 +11,11 @@ export default function Inventory() {
   const [search, setSearch] = useState('')
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [showInactive, setShowInactive] = useState(false)
 
-  const { data: products, isLoading } = useProducts(category, search)
+  const { data: products, isLoading } = useProducts(category, search, showInactive)
 
-  const lowStockCount = products?.filter((p) => p.stock < p.min_stock).length ?? 0
+  const lowStockCount = products?.filter((p) => p.stock < p.min_stock && p.active).length ?? 0
 
   return (
     <div className="space-y-4">
@@ -27,10 +28,20 @@ export default function Inventory() {
             </p>
           )}
         </div>
-        <Button onClick={() => setShowCreate(true)} size="sm">
-          <Plus className="h-4 w-4" />
-          Agregar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showInactive ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setShowInactive(!showInactive)}
+            title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+          >
+            {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+          <Button onClick={() => setShowCreate(true)} size="sm">
+            <Plus className="h-4 w-4" />
+            Agregar
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

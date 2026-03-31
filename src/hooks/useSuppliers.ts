@@ -24,11 +24,59 @@ export function useCreateSupplier() {
     mutationFn: async (data: SupplierFormData) => {
       const { data: result, error } = await supabase
         .from('suppliers')
-        .insert({ name: data.name, phone: data.phone || null })
+        .insert({
+          name: data.name,
+          phone: data.phone || null,
+          email: data.email || null,
+          contact_name: data.contact_name || null,
+          address: data.address || null,
+          notes: data.notes || null,
+        })
         .select()
         .single()
       if (error) throw error
       return result as Supplier
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    },
+  })
+}
+
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: SupplierFormData & { id: string }) => {
+      const { error } = await supabase
+        .from('suppliers')
+        .update({
+          name: data.name,
+          phone: data.phone || null,
+          email: data.email || null,
+          contact_name: data.contact_name || null,
+          address: data.address || null,
+          notes: data.notes || null,
+        })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    },
+  })
+}
+
+export function useToggleSupplier() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase
+        .from('suppliers')
+        .update({ active })
+        .eq('id', id)
+      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] })

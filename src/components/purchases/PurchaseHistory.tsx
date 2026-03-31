@@ -99,7 +99,14 @@ export function PurchaseHistory() {
                       {items.map((item) => (
                         <tr key={item.id}>
                           <td className="py-1.5">{item.product_name}</td>
-                          <td className="py-1.5 text-right">{item.qty} {item.unit}</td>
+                          <td className="py-1.5 text-right">
+                            {item.qty} {item.purchase_unit || item.unit}
+                            {item.purchase_unit && item.base_qty && item.purchase_unit !== item.unit && (
+                              <span className="ml-1 text-xs text-primary-600">
+                                (= {item.base_qty} {item.unit})
+                              </span>
+                            )}
+                          </td>
                           <td className="py-1.5 text-right">{formatCLP(item.cost_price)}</td>
                           <td className="py-1.5 text-right font-medium">{formatCLP(item.total_cost)}</td>
                         </tr>

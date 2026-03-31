@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertTriangle } from 'lucide-react'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
+import { useUnits } from '@/hooks/useUnits'
 import { productSchema, type ProductFormData } from '@/lib/schemas'
-import { CATEGORIES, UNITS, MARGIN_FACTOR } from '@/lib/constants'
+import { CATEGORIES, UNITS as FALLBACK_UNITS, DEFAULT_MARGIN_PERCENT } from '@/lib/constants'
 import { Modal, Button, toast } from '@/components/shared'
 import type { Product } from '@/lib/types'
 
@@ -18,6 +19,9 @@ export function ProductFormModal({ open, onClose, product }: Props) {
   const isEdit = !!product
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
+  const { data: dbUnits } = useUnits()
+
+  const units = dbUnits && dbUnits.length > 0 ? dbUnits.map((u) => u.name) : FALLBACK_UNITS
 
   const {
     register,
@@ -34,6 +38,7 @@ export function ProductFormModal({ open, onClose, product }: Props) {
       unit: 'kg',
       cost_price: 0,
       sale_price: 0,
+      margin_percent: DEFAULT_MARGIN_PERCENT,
       min_stock: 3,
       stock: 0,
     },
@@ -47,6 +52,7 @@ export function ProductFormModal({ open, onClose, product }: Props) {
         unit: product.unit,
         cost_price: product.cost_price,
         sale_price: product.sale_price,
+        margin_percent: product.margin_percent ?? DEFAULT_MARGIN_PERCENT,
         min_stock: product.min_stock,
       })
     } else if (open) {
@@ -56,6 +62,7 @@ export function ProductFormModal({ open, onClose, product }: Props) {
         unit: 'kg',
         cost_price: 0,
         sale_price: 0,
+        margin_percent: DEFAULT_MARGIN_PERCENT,
         min_stock: 3,
         stock: 0,
       })
@@ -64,15 +71,16 @@ export function ProductFormModal({ open, onClose, product }: Props) {
 
   const costPrice = watch('cost_price')
   const salePrice = watch('sale_price')
+  const marginPercent = watch('margin_percent')
   const showWarning = costPrice > 0 && salePrice > 0 && salePrice < costPrice
 
-  // Auto-calcular precio de venta cuando cambia el costo
+  // Auto-calcular precio de venta cuando cambia el costo o el margen
   useEffect(() => {
-    if (costPrice > 0) {
-      const suggested = Math.ceil(costPrice / MARGIN_FACTOR)
+    if (costPrice > 0 && marginPercent >= 0 && marginPercent < 100) {
+      const suggested = Math.ceil(costPrice / (1 - marginPercent / 100))
       setValue('sale_price', suggested)
     }
-  }, [costPrice, setValue])
+  }, [costPrice, marginPercent, setValue])
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -119,14 +127,14 @@ export function ProductFormModal({ open, onClose, product }: Props) {
               {...register('unit')}
               className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-100"
             >
-              {UNITS.map((u) => (
+              {units.map((u) => (
                 <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Precio costo</label>
             <input
@@ -136,6 +144,18 @@ export function ProductFormModal({ open, onClose, product }: Props) {
               className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-100"
             />
             {errors.cost_price && <p className="mt-1 text-xs text-red-600">{errors.cost_price.message}</p>}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Margen %</label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              max="99"
+              {...register('margin_percent', { valueAsNumber: true })}
+              className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-100"
+            />
+            {errors.margin_percent && <p className="mt-1 text-xs text-red-600">{errors.margin_percent.message}</p>}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Precio venta</label>

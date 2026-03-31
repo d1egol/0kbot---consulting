@@ -15,6 +15,7 @@ export interface Product {
   unit: string
   cost_price: number
   sale_price: number
+  margin_percent: number
   stock: number
   min_stock: number
   active: boolean
@@ -35,7 +36,31 @@ export interface Supplier {
   id: string
   name: string
   phone: string | null
+  email: string | null
+  contact_name: string | null
+  address: string | null
+  notes: string | null
+  active: boolean
   created_at: string
+}
+
+export interface Unit {
+  id: string
+  name: string
+  abbreviation: string | null
+  active: boolean
+  sort_order: number
+  created_at: string
+}
+
+export interface UnitConversion {
+  id: string
+  product_id: string
+  from_unit: string
+  to_unit: string
+  factor: number
+  created_at: string
+  updated_at: string
 }
 
 export interface PurchaseOrder {
@@ -50,7 +75,6 @@ export interface PurchaseOrder {
   voided: boolean
   voided_at: string | null
   created_at: string
-  // Relaciones opcionales
   supplier?: Supplier
   items?: PurchaseItem[]
 }
@@ -64,6 +88,9 @@ export interface PurchaseItem {
   unit: string
   cost_price: number
   total_cost: number
+  purchase_unit: string | null
+  conversion_factor: number | null
+  base_qty: number | null
 }
 
 export interface Sale {

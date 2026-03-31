@@ -4,17 +4,18 @@ import { supabase } from '@/lib/supabase'
 import type { Product, ProductCategory } from '@/lib/types'
 import type { ProductFormData } from '@/lib/schemas'
 
-export function useProducts(category?: ProductCategory | null, search?: string) {
+export function useProducts(category?: ProductCategory | null, search?: string, showInactive = false) {
   const queryClient = useQueryClient()
 
   const query = useQuery({
-    queryKey: ['products', { category, search }],
+    queryKey: ['products', { category, search, showInactive }],
     queryFn: async () => {
       let q = supabase
         .from('products')
         .select('*')
-        .eq('active', true)
         .order('name')
+
+      if (!showInactive) q = q.eq('active', true)
 
       if (category) q = q.eq('category', category)
       if (search) q = q.ilike('name', `%${search}%`)
@@ -73,6 +74,7 @@ export function useCreateProduct() {
           unit: data.unit,
           cost_price: data.cost_price,
           sale_price: data.sale_price,
+          margin_percent: data.margin_percent ?? 20,
           min_stock: data.min_stock,
           stock: data.stock ?? 0,
         })
@@ -100,6 +102,7 @@ export function useUpdateProduct() {
           unit: data.unit,
           cost_price: data.cost_price,
           sale_price: data.sale_price,
+          margin_percent: data.margin_percent ?? 20,
           min_stock: data.min_stock,
         })
         .eq('id', id)

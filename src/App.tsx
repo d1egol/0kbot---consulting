@@ -7,6 +7,7 @@ import Inventory from '@/pages/Inventory'
 import Purchases from '@/pages/Purchases'
 import POS from '@/pages/POS'
 import Shrinkage from '@/pages/Shrinkage'
+import Maintainers from '@/pages/Maintainers'
 import NotFound from '@/pages/NotFound'
 
 function DefaultRedirect() {
@@ -59,6 +60,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'buyer', 'cashier']}>
               <Shrinkage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="maintainers"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Maintainers />
             </ProtectedRoute>
           }
         />

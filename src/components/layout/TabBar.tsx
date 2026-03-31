@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Truck, Package, AlertTriangle } from 'lucide-react'
+import { ShoppingCart, Truck, Package, AlertTriangle, Settings } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import type { UserRole } from '@/lib/types'
 import { cn } from '@/utils/cn'
@@ -17,6 +17,7 @@ const tabs: Tab[] = [
   { path: '/purchases', label: 'Compras', icon: Truck, roles: ['buyer', 'admin'] },
   { path: '/inventory', label: 'Inventario', icon: Package, roles: ['admin', 'buyer'] },
   { path: '/shrinkage', label: 'Mermas', icon: AlertTriangle, roles: ['admin', 'buyer', 'cashier'] },
+  { path: '/maintainers', label: 'Mantenedores', icon: Settings, roles: ['admin'] },
 ]
 
 export function TabBar() {

@@ -23,5 +23,7 @@ export const ROLES: { value: UserRole; label: string }[] = [
 ]
 
 export const MARGIN_FACTOR = 0.80
+export const DEFAULT_MARGIN_PERCENT = 20
 
+// Fallback si no hay unidades en DB aún
 export const UNITS = ['kg', 'unidad', 'atado', 'bandeja', 'frasco', 'rollo', 'ciento', 'caja', 'paquete']
