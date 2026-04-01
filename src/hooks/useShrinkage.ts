@@ -23,8 +23,9 @@ export function useShrinkageList() {
         .select('*')
         .order('created_at', { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1)
+      if (error && error.code === 'PGRST103') return [] as ShrinkageRecord[]
       if (error) throw error
-      return data as ShrinkageRecord[]
+      return (data ?? []) as ShrinkageRecord[]
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {

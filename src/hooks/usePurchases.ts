@@ -31,8 +31,9 @@ export function usePurchaseOrders() {
         .select('*, supplier:suppliers(name)')
         .order('created_at', { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1)
+      if (error && error.code === 'PGRST103') return [] as (PurchaseOrder & { supplier: { name: string } | null })[]
       if (error) throw error
-      return data as (PurchaseOrder & { supplier: { name: string } | null })[]
+      return (data ?? []) as (PurchaseOrder & { supplier: { name: string } | null })[]
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {

@@ -28,8 +28,9 @@ export function useSales() {
         .select('*')
         .order('created_at', { ascending: false })
         .range(pageParam, pageParam + PAGE_SIZE - 1)
+      if (error && error.code === 'PGRST103') return [] as Sale[]
       if (error) throw error
-      return data as Sale[]
+      return (data ?? []) as Sale[]
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
