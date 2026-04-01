@@ -8,8 +8,7 @@ import { cn } from '@/utils/cn'
 
 export function ShrinkageHistory() {
   const role = useAuthStore((s) => s.role)
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useShrinkageList()
-  const records = data?.pages.flat()
+  const { data: records, isLoading } = useShrinkageList()
   const voidShrinkage = useVoidShrinkage()
 
   const handleVoid = async (id: string) => {
@@ -86,15 +85,6 @@ export function ShrinkageHistory() {
             </div>
           ))}
 
-          {hasNextPage && (
-            <button
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
-              {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
-            </button>
-          )}
         </div>
       )}
     </div>

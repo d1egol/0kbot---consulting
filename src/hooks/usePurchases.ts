@@ -1,4 +1,4 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { PurchaseOrder, PurchaseItem } from '@/lib/types'
 
@@ -20,25 +20,17 @@ interface PurchaseOrderInput {
   }[]
 }
 
-const PAGE_SIZE = 30
-
-export function usePurchaseOrders() {
-  return useInfiniteQuery({
-    queryKey: ['purchase_orders'],
-    queryFn: async ({ pageParam = 0 }) => {
+export function usePurchaseOrders(limit = 100) {
+  return useQuery({
+    queryKey: ['purchase_orders', limit],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('purchase_orders')
         .select('*, supplier:suppliers(name)')
         .order('created_at', { ascending: false })
-        .range(pageParam, pageParam + PAGE_SIZE - 1)
-      if (error && error.code === 'PGRST103') return [] as (PurchaseOrder & { supplier: { name: string } | null })[]
+        .limit(limit)
       if (error) throw error
       return (data ?? []) as (PurchaseOrder & { supplier: { name: string } | null })[]
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < PAGE_SIZE) return undefined
-      return allPages.length * PAGE_SIZE
     },
   })
 }

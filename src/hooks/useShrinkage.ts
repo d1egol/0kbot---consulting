@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { ShrinkageRecord, ShrinkageReason } from '@/lib/types'
 
@@ -12,25 +12,17 @@ interface ShrinkageInput {
   date?: string
 }
 
-const PAGE_SIZE = 30
-
-export function useShrinkageList() {
-  return useInfiniteQuery({
-    queryKey: ['shrinkage'],
-    queryFn: async ({ pageParam = 0 }) => {
+export function useShrinkageList(limit = 100) {
+  return useQuery({
+    queryKey: ['shrinkage', limit],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('shrinkage')
         .select('*')
         .order('created_at', { ascending: false })
-        .range(pageParam, pageParam + PAGE_SIZE - 1)
-      if (error && error.code === 'PGRST103') return [] as ShrinkageRecord[]
+        .limit(limit)
       if (error) throw error
       return (data ?? []) as ShrinkageRecord[]
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < PAGE_SIZE) return undefined
-      return allPages.length * PAGE_SIZE
     },
   })
 }

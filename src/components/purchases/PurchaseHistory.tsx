@@ -9,8 +9,7 @@ import { cn } from '@/utils/cn'
 
 export function PurchaseHistory() {
   const role = useAuthStore((s) => s.role)
-  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = usePurchaseOrders()
-  const orders = data?.pages.flat()
+  const { data: orders, isLoading } = usePurchaseOrders()
   const voidOrder = useVoidPurchaseOrder()
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -141,15 +140,6 @@ export function PurchaseHistory() {
         )
       })}
 
-      {hasNextPage && (
-        <button
-          onClick={() => fetchNextPage()}
-          disabled={isFetchingNextPage}
-          className="w-full rounded-lg border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
-        >
-          {isFetchingNextPage ? 'Cargando...' : 'Cargar más'}
-        </button>
-      )}
     </div>
   )
 }
