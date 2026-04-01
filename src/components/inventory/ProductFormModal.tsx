@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, History } from 'lucide-react'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
 import { useUnits } from '@/hooks/useUnits'
+import { usePriceHistory } from '@/hooks/usePriceHistory'
 import { productSchema, type ProductFormData } from '@/lib/schemas'
 import { CATEGORIES, UNITS as FALLBACK_UNITS, DEFAULT_MARGIN_PERCENT } from '@/lib/constants'
 import { Modal, Button, toast } from '@/components/shared'
+import { formatCLP } from '@/utils/currency'
+import { formatDate } from '@/utils/dates'
 import type { Product } from '@/lib/types'
 
 interface Props {
@@ -20,6 +23,7 @@ export function ProductFormModal({ open, onClose, product }: Props) {
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const { data: dbUnits } = useUnits()
+  const { data: priceHistory } = usePriceHistory(product?.id ?? null)
 
   const units = dbUnits && dbUnits.length > 0 ? dbUnits.map((u) => u.name) : FALLBACK_UNITS
 
@@ -198,6 +202,36 @@ export function ProductFormModal({ open, onClose, product }: Props) {
             </div>
           )}
         </div>
+
+        {/* Historial de precios (solo al editar) */}
+        {isEdit && priceHistory && priceHistory.length > 0 && (
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+              <History className="h-3.5 w-3.5" />
+              Historial de precios
+            </div>
+            <div className="max-h-32 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-gray-400">
+                    <th className="pb-1 text-left font-medium">Fecha</th>
+                    <th className="pb-1 text-right font-medium">Costo</th>
+                    <th className="pb-1 text-right font-medium">Venta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {priceHistory.map((h) => (
+                    <tr key={h.id}>
+                      <td className="py-1 text-gray-600">{formatDate(h.recorded_at)}</td>
+                      <td className="py-1 text-right text-gray-700">{formatCLP(h.cost_price)}</td>
+                      <td className="py-1 text-right text-gray-700">{formatCLP(h.sale_price)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="secondary" type="button" onClick={onClose}>

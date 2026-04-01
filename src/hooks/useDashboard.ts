@@ -6,6 +6,7 @@ interface SaleRow {
   id: string
   date: string
   total: number
+  payment_method: string
   sale_items: Array<{
     qty: number
     unit_price: number
@@ -20,25 +21,58 @@ interface TopProductItem {
   subtotal: number
 }
 
+interface PurchaseRow {
+  id: string
+  date: string
+  total_cost: number
+  supplier: { name: string } | null
+}
+
+interface ShrinkageRow {
+  id: string
+  date: string
+  product_name: string
+  qty: number
+  reason: string
+  estimated_value: number | null
+}
+
 function getDateString(daysAgo: number): string {
   const d = new Date()
   d.setDate(d.getDate() - daysAgo)
   return d.toISOString().split('T')[0]!
 }
 
-export function useDashboard() {
-  const today = getDateString(0)
-  const sevenDaysAgo = getDateString(6)
-  const thirtyDaysAgo = getDateString(29)
+export type DateRange = 'today' | '7d' | '30d' | 'custom'
 
-  // Ventas últimos 7 días con sus ítems (para KPIs + chart + ganancia bruta)
+interface DashboardOptions {
+  range: DateRange
+  from?: string
+  to?: string
+}
+
+export function useDashboard(options: DashboardOptions = { range: '7d' }) {
+  const today = getDateString(0)
+
+  const rangeFrom = (() => {
+    switch (options.range) {
+      case 'today': return today
+      case '7d': return getDateString(6)
+      case '30d': return getDateString(29)
+      case 'custom': return options.from ?? getDateString(6)
+    }
+  })()
+  const rangeTo = options.range === 'custom' && options.to ? options.to : today
+
+  // Ventas del rango con ítems
   const salesQuery = useQuery({
-    queryKey: ['dashboard', 'sales_with_items', today],
+    queryKey: ['dashboard', 'sales', rangeFrom, rangeTo],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
-        .select('id, date, total, sale_items(qty, unit_price, products(cost_price))')
-        .gte('date', `${sevenDaysAgo}T00:00:00`)
+        .select('id, date, total, payment_method, sale_items(qty, unit_price, products(cost_price))')
+        .gte('date', `${rangeFrom}T00:00:00`)
+        .lte('date', `${rangeTo}T23:59:59`)
         .eq('voided', false)
         .order('date', { ascending: true })
       if (error) throw error
@@ -48,31 +82,51 @@ export function useDashboard() {
     retry: 1,
   })
 
-  // Mermas de hoy
+  // Mermas del rango
   const shrinkageQuery = useQuery({
-    queryKey: ['dashboard', 'shrinkage', today],
+    queryKey: ['dashboard', 'shrinkage', rangeFrom, rangeTo],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shrinkage')
-        .select('estimated_value')
-        .gte('date', today)
-        .lte('date', today)
+        .select('id, date, product_name, qty, reason, estimated_value')
+        .gte('date', rangeFrom)
+        .lte('date', rangeTo)
         .eq('voided', false)
+        .order('date', { ascending: false })
       if (error) throw error
-      return (data ?? []) as { estimated_value: number | null }[]
+      return (data ?? []) as ShrinkageRow[]
     },
     staleTime: 30_000,
     retry: 1,
   })
 
-  // Top 5 productos vendidos en los últimos 30 días
+  // Compras del rango
+  const purchasesQuery = useQuery({
+    queryKey: ['dashboard', 'purchases', rangeFrom, rangeTo],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select('id, date, total_cost, supplier:suppliers(name)')
+        .gte('date', rangeFrom)
+        .lte('date', rangeTo)
+        .eq('voided', false)
+        .order('date', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as unknown as PurchaseRow[]
+    },
+    staleTime: 30_000,
+    retry: 1,
+  })
+
+  // Top productos del rango
   const topProductsQuery = useQuery({
-    queryKey: ['dashboard', 'top_products', today],
+    queryKey: ['dashboard', 'top_products', rangeFrom, rangeTo],
     queryFn: async () => {
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select('id')
-        .gte('date', `${thirtyDaysAgo}T00:00:00`)
+        .gte('date', `${rangeFrom}T00:00:00`)
+        .lte('date', `${rangeTo}T23:59:59`)
         .eq('voided', false)
       if (salesError) throw salesError
 
@@ -106,14 +160,14 @@ export function useDashboard() {
     retry: 1,
   })
 
-  // --- Calcular KPIs ---
+  // --- KPIs del rango ---
   const salesData = salesQuery.data ?? []
   const todaySales = salesData.filter((s) => s.date.startsWith(today))
 
   const salesToday = todaySales.reduce((sum, s) => sum + Number(s.total), 0)
   const transactionsToday = todaySales.length
 
-  // Ganancia bruta hoy: suma de (precio_venta - costo) × cantidad
+  // Ganancia bruta hoy
   let grossProfitToday = 0
   for (const sale of todaySales) {
     for (const item of sale.sale_items ?? []) {
@@ -122,29 +176,60 @@ export function useDashboard() {
     }
   }
 
-  // Mermas hoy
-  const shrinkageToday = (shrinkageQuery.data ?? []).reduce(
-    (sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0),
-    0,
+  // Totales del rango completo
+  const salesTotal = salesData.reduce((sum, s) => sum + Number(s.total), 0)
+  const transactionsTotal = salesData.length
+
+  let grossProfitTotal = 0
+  for (const sale of salesData) {
+    for (const item of sale.sale_items ?? []) {
+      const cost = item.products?.cost_price ?? 0
+      grossProfitTotal += Number(item.qty) * (Number(item.unit_price) - Number(cost))
+    }
+  }
+
+  // Mermas
+  const shrinkageData = shrinkageQuery.data ?? []
+  const shrinkageToday = shrinkageData
+    .filter((s) => s.date === today)
+    .reduce((sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0)
+
+  const shrinkageTotal = shrinkageData.reduce(
+    (sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0,
   )
 
-  // --- Gráfico barras últimos 7 días ---
-  const last7Days = Array.from({ length: 7 }, (_, i) => getDateString(6 - i))
+  // --- Gráfico barras ---
+  const daysCount = Math.max(1, Math.ceil((new Date(`${rangeTo}T12:00:00`).getTime() - new Date(`${rangeFrom}T12:00:00`).getTime()) / 86400000) + 1)
+  const daysList = Array.from({ length: Math.min(daysCount, 60) }, (_, i) => {
+    const d = new Date(`${rangeFrom}T12:00:00`)
+    d.setDate(d.getDate() + i)
+    return d.toISOString().split('T')[0]!
+  })
 
-  const salesByDay: Record<string, number> = Object.fromEntries(last7Days.map((d) => [d, 0]))
+  const salesByDay: Record<string, number> = Object.fromEntries(daysList.map((d) => [d, 0]))
   for (const s of salesData) {
     const day = s.date.split('T')[0]!
     if (day in salesByDay) salesByDay[day]! += Number(s.total)
   }
 
-  const chartData = last7Days.map((d) => ({
+  const chartData = daysList.map((d) => ({
     date: d,
     label: new Date(`${d}T12:00:00`).toLocaleDateString('es-CL', {
-      weekday: 'short',
+      weekday: daysCount <= 14 ? 'short' : undefined,
       day: 'numeric',
+      month: daysCount > 14 ? 'short' : undefined,
     }),
     total: salesByDay[d] ?? 0,
   }))
+
+  // --- Desglose por método de pago ---
+  const paymentBreakdown: Record<string, { count: number; total: number }> = {}
+  for (const s of salesData) {
+    const method = s.payment_method || 'unknown'
+    if (!paymentBreakdown[method]) paymentBreakdown[method] = { count: 0, total: 0 }
+    paymentBreakdown[method]!.count += 1
+    paymentBreakdown[method]!.total += Number(s.total)
+  }
 
   // --- Top 5 productos ---
   const productMap: Record<string, { name: string; qty: number; revenue: number }> = {}
@@ -159,6 +244,32 @@ export function useDashboard() {
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5)
 
+  // --- Compras por proveedor ---
+  const purchasesData = purchasesQuery.data ?? []
+  const purchasesTotal = purchasesData.reduce((sum, p) => sum + Number(p.total_cost), 0)
+
+  const purchasesBySupplier: Record<string, { count: number; total: number }> = {}
+  for (const p of purchasesData) {
+    const name = p.supplier?.name ?? 'Sin proveedor'
+    if (!purchasesBySupplier[name]) purchasesBySupplier[name] = { count: 0, total: 0 }
+    purchasesBySupplier[name]!.count += 1
+    purchasesBySupplier[name]!.total += Number(p.total_cost)
+  }
+  const supplierBreakdown = Object.entries(purchasesBySupplier)
+    .map(([name, data]) => ({ name, ...data }))
+    .sort((a, b) => b.total - a.total)
+
+  // --- Mermas por razón ---
+  const shrinkageByReason: Record<string, { count: number; total: number }> = {}
+  for (const s of shrinkageData) {
+    if (!shrinkageByReason[s.reason]) shrinkageByReason[s.reason] = { count: 0, total: 0 }
+    shrinkageByReason[s.reason]!.count += 1
+    shrinkageByReason[s.reason]!.total += s.estimated_value ? Number(s.estimated_value) : 0
+  }
+  const shrinkageBreakdown = Object.entries(shrinkageByReason)
+    .map(([reason, data]) => ({ reason, ...data }))
+    .sort((a, b) => b.total - a.total)
+
   // --- Alertas de stock ---
   const products = productsQuery.data ?? []
   const criticalStock = products.filter((p) => Number(p.stock) === 0)
@@ -169,14 +280,29 @@ export function useDashboard() {
       salesQuery.isLoading ||
       shrinkageQuery.isLoading ||
       topProductsQuery.isLoading ||
-      productsQuery.isLoading,
+      productsQuery.isLoading ||
+      purchasesQuery.isLoading,
+    // KPIs hoy
     salesToday,
     transactionsToday,
     grossProfitToday,
     shrinkageToday,
+    // KPIs rango
+    salesTotal,
+    transactionsTotal,
+    grossProfitTotal,
+    shrinkageTotal,
+    purchasesTotal,
+    // Detalles
     chartData,
     topProducts,
+    paymentBreakdown,
+    supplierBreakdown,
+    shrinkageBreakdown,
     criticalStock,
     lowStock,
+    // Meta
+    rangeFrom,
+    rangeTo,
   }
 }
