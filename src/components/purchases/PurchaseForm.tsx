@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash2, ArrowRightLeft } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
+import { useLocationStore } from '@/store/locationStore'
 import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers'
 import { useCreatePurchaseOrder } from '@/hooks/usePurchases'
 import { useUnits } from '@/hooks/useUnits'
@@ -21,6 +22,7 @@ interface Props {
 
 export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
   const user = useAuthStore((s) => s.user)
+  const activeLocationId = useLocationStore((s) => s.activeLocationId)
   const { data: suppliers } = useSuppliers()
   const createPO = useCreatePurchaseOrder()
   const createSupplier = useCreateSupplier()
@@ -43,12 +45,18 @@ export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
 
   // Conversiones por producto: { [product_id]: UnitConversion[] }
   const [conversionsMap, setConversionsMap] = useState<Record<string, UnitConversion[]>>({})
+  // Ref para trackear IDs ya fetcheadas — evita stale closure sobre conversionsMap
+  const fetchedProductIds = useRef<Set<string>>(new Set())
 
-  // Cargar conversiones cuando se agregan líneas
+  // Cargar conversiones cuando se agregan nuevos productos
   useEffect(() => {
-    const productIds = lines.map((l) => l.product_id)
-    const missing = productIds.filter((id) => !(id in conversionsMap))
+    const missing = lines
+      .map((l) => l.product_id)
+      .filter((id) => !fetchedProductIds.current.has(id))
     if (missing.length === 0) return
+
+    // Marcar como pendientes antes del fetch para evitar doble carga
+    for (const id of missing) fetchedProductIds.current.add(id)
 
     const loadConversions = async () => {
       const { data } = await supabase
@@ -57,17 +65,19 @@ export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
         .in('product_id', missing)
 
       if (data) {
-        const grouped: Record<string, UnitConversion[]> = { ...conversionsMap }
-        for (const id of missing) grouped[id] = []
-        for (const conv of data as UnitConversion[]) {
-          if (!grouped[conv.product_id]) grouped[conv.product_id] = []
-          grouped[conv.product_id]!.push(conv)
-        }
-        setConversionsMap(grouped)
+        setConversionsMap((prev) => {
+          const grouped: Record<string, UnitConversion[]> = { ...prev }
+          for (const id of missing) grouped[id] = []
+          for (const conv of data as UnitConversion[]) {
+            if (!grouped[conv.product_id]) grouped[conv.product_id] = []
+            grouped[conv.product_id]!.push(conv)
+          }
+          return grouped
+        })
       }
     }
     loadConversions()
-  }, [lines.map((l) => l.product_id).join(',')])
+  }, [lines])
 
   const total = lines.reduce((sum, l) => sum + l.qty * l.cost_price, 0)
 
@@ -124,6 +134,10 @@ export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
       toast.error('Agrega al menos un producto')
       return
     }
+    if (!activeLocationId) {
+      toast.error('Selecciona una ubicación en el encabezado')
+      return
+    }
 
     try {
       await createPO.mutateAsync({
@@ -133,6 +147,7 @@ export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
         has_invoice: hasInvoice,
         invoice_number: hasInvoice ? invoiceNumber : undefined,
         comments: comments || undefined,
+        location_id: activeLocationId,
         items: lines.map((l) => ({
           product_id: l.product_id,
           product_name: l.product_name,

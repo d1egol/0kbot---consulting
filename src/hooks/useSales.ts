@@ -15,6 +15,7 @@ interface SaleInput {
   payment_method: PaymentMethod
   cash_received: number | null
   cash_change: number | null
+  location_id: string | null
 }
 
 export function useSales(limit = 100) {
@@ -62,6 +63,7 @@ export function useCreateSale() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['location_stock'] })
     },
   })
 }
@@ -79,6 +81,7 @@ export function useVoidSale() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['location_stock'] })
     },
   })
 }

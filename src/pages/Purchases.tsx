@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import { useDebounce } from '@/hooks/useDebounce'
 import { ProductCatalog } from '@/components/purchases/ProductCatalog'
 import { PurchaseForm } from '@/components/purchases/PurchaseForm'
 import { PurchaseHistory } from '@/components/purchases/PurchaseHistory'
@@ -13,7 +14,8 @@ export default function Purchases() {
   const [tab, setTab] = useState<'order' | 'history'>('order')
   const [mobileTab, setMobileTab] = useState<'catalog' | 'order'>('catalog')
 
-  const { data: products, isLoading } = useProducts(category, search)
+  const debouncedSearch = useDebounce(search)
+  const { data: products, isLoading } = useProducts(category, debouncedSearch)
 
   const addProduct = (product: Product, qty = 1) => {
     setLines((prev) => {

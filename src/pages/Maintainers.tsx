@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { cn } from '@/utils/cn'
 import { SupplierManager } from '@/components/maintainers/SupplierManager'
 import { UnitManager } from '@/components/maintainers/UnitManager'
+import { LocationManager } from '@/components/maintainers/LocationManager'
 
-type Tab = 'suppliers' | 'units'
+type Tab = 'suppliers' | 'units' | 'locations'
 
 export default function Maintainers() {
   const [tab, setTab] = useState<Tab>('suppliers')
@@ -31,9 +32,20 @@ export default function Maintainers() {
         >
           Unidades
         </button>
+        <button
+          onClick={() => setTab('locations')}
+          className={cn(
+            'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+            tab === 'locations' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700',
+          )}
+        >
+          Locales
+        </button>
       </div>
 
-      {tab === 'suppliers' ? <SupplierManager /> : <UnitManager />}
+      {tab === 'suppliers' && <SupplierManager />}
+      {tab === 'units' && <UnitManager />}
+      {tab === 'locations' && <LocationManager />}
     </div>
   )
 }

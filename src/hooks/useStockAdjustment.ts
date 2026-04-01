@@ -6,6 +6,7 @@ interface AdjustStockInput {
   new_stock: number
   reason: string
   adjusted_by: string
+  location_id: string | null
 }
 
 export function useAdjustStock() {
@@ -21,6 +22,7 @@ export function useAdjustStock() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['location_stock'] })
     },
   })
 }

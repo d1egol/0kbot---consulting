@@ -9,6 +9,7 @@ interface PurchaseOrderInput {
   has_invoice: boolean
   invoice_number?: string
   comments?: string
+  location_id: string | null
   items: {
     product_id: string
     product_name: string
@@ -65,6 +66,7 @@ export function useCreatePurchaseOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase_orders'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['location_stock'] })
     },
   })
 }

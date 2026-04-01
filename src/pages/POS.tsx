@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useCartStore } from '@/store/cartStore'
 import { ProductSearch } from '@/components/pos/ProductSearch'
 import { Cart } from '@/components/pos/Cart'
@@ -10,7 +11,8 @@ import type { Product } from '@/lib/types'
 export default function POS() {
   const [search, setSearch] = useState('')
   const [showCheckout, setShowCheckout] = useState(false)
-  const { data: products } = useProducts(null, search)
+  const debouncedSearch = useDebounce(search)
+  const { data: products } = useProducts(null, debouncedSearch)
   const addItem = useCartStore((s) => s.addItem)
   const items = useCartStore((s) => s.items)
 

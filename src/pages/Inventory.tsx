@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Eye, EyeOff } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
+import { useDebounce } from '@/hooks/useDebounce'
 import { CategoryChips, SearchInput, Button, EmptyState } from '@/components/shared'
 import { ProductTable } from '@/components/inventory/ProductTable'
 import { ProductFormModal } from '@/components/inventory/ProductFormModal'
@@ -15,7 +16,8 @@ export default function Inventory() {
   const [showCreate, setShowCreate] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
 
-  const { data: products, isLoading } = useProducts(category, search, showInactive)
+  const debouncedSearch = useDebounce(search)
+  const { data: products, isLoading } = useProducts(category, debouncedSearch, showInactive)
 
   const lowStockCount = products?.filter((p) => p.stock < p.min_stock && p.active).length ?? 0
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
+import { useLocationStore } from '@/store/locationStore'
 import { useAdjustStock } from '@/hooks/useStockAdjustment'
 import { Modal, Button, toast } from '@/components/shared'
 import type { Product } from '@/lib/types'
@@ -20,6 +21,7 @@ const REASONS = [
 
 export function StockAdjustModal({ open, onClose, product }: Props) {
   const user = useAuthStore((s) => s.user)
+  const activeLocationId = useLocationStore((s) => s.activeLocationId)
   const adjustStock = useAdjustStock()
   const [newStock, setNewStock] = useState<number>(0)
   const [reason, setReason] = useState(REASONS[0]!)
@@ -40,6 +42,7 @@ export function StockAdjustModal({ open, onClose, product }: Props) {
         new_stock: newStock,
         reason,
         adjusted_by: adjustedBy,
+        location_id: activeLocationId,
       })
       toast.success(`Stock de ${product.name} ajustado: ${product.stock} → ${newStock} ${product.unit}`)
       onClose()

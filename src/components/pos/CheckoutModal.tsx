@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Banknote, CreditCard, ArrowRightLeft } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
+import { useLocationStore } from '@/store/locationStore'
 import { useCreateSale } from '@/hooks/useSales'
 import { useAllProducts } from '@/hooks/useProducts'
 import { Modal, Button, toast } from '@/components/shared'
@@ -22,6 +23,7 @@ const paymentOptions: { value: PaymentMethod; label: string; icon: typeof Bankno
 
 export function CheckoutModal({ open, onClose }: Props) {
   const user = useAuthStore((s) => s.user)
+  const activeLocationId = useLocationStore((s) => s.activeLocationId)
   const items = useCartStore((s) => s.items)
   const discountType = useCartStore((s) => s.discountType)
   const discountValue = useCartStore((s) => s.discountValue)
@@ -57,6 +59,10 @@ export function CheckoutModal({ open, onClose }: Props) {
   const { data: freshProducts } = useAllProducts()
 
   const handleConfirm = async () => {
+    if (!activeLocationId) {
+      toast.error('Selecciona una ubicación antes de cobrar')
+      return
+    }
     if (total <= 0) {
       toast.error('El total debe ser mayor a $0')
       return
@@ -93,6 +99,7 @@ export function CheckoutModal({ open, onClose }: Props) {
         payment_method: paymentMethod,
         cash_received: paymentMethod === 'cash' ? cashReceived : null,
         cash_change: paymentMethod === 'cash' ? change : null,
+        location_id: activeLocationId,
       })
 
       toast.success(`Venta registrada: ${formatCLP(total)}`)
@@ -103,10 +110,15 @@ export function CheckoutModal({ open, onClose }: Props) {
     }
   }
 
-  const canConfirm = total > 0 && (paymentMethod !== 'cash' || cashReceived >= total)
+  const canConfirm = !!activeLocationId && total > 0 && (paymentMethod !== 'cash' || cashReceived >= total)
 
   return (
     <Modal open={open} onClose={onClose} title="Confirmar Cobro" className="max-w-md">
+      {!activeLocationId && (
+        <div className="mb-4 rounded-lg bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
+          Selecciona una ubicación en el encabezado antes de cobrar
+        </div>
+      )}
       {/* Resumen */}
       <div className="mb-4 space-y-2">
         {items.map((item) => (
