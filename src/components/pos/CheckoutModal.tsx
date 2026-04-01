@@ -3,6 +3,7 @@ import { Banknote, CreditCard, ArrowRightLeft } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
 import { useCreateSale } from '@/hooks/useSales'
+import { useAllProducts } from '@/hooks/useProducts'
 import { Modal, Button, toast } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
 import type { PaymentMethod } from '@/lib/types'
@@ -53,7 +54,29 @@ export function CheckoutModal({ open, onClose }: Props) {
     return () => document.removeEventListener('keydown', handler)
   }, [open, onClose])
 
+  const { data: freshProducts } = useAllProducts()
+
   const handleConfirm = async () => {
+    if (total <= 0) {
+      toast.error('El total debe ser mayor a $0')
+      return
+    }
+
+    // Validar stock actual antes de cobrar
+    if (freshProducts) {
+      for (const item of items) {
+        const current = freshProducts.find((p) => p.id === item.product.id)
+        if (!current || !current.active) {
+          toast.error(`${item.product.name}: producto no disponible`)
+          return
+        }
+        if (current.stock < item.quantity) {
+          toast.error(`${item.product.name}: stock insuficiente (disponible: ${current.stock})`)
+          return
+        }
+      }
+    }
+
     const cashierName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Cajero'
 
     try {
@@ -80,7 +103,7 @@ export function CheckoutModal({ open, onClose }: Props) {
     }
   }
 
-  const canConfirm = paymentMethod !== 'cash' || cashReceived >= total
+  const canConfirm = total > 0 && (paymentMethod !== 'cash' || cashReceived >= total)
 
   return (
     <Modal open={open} onClose={onClose} title="Confirmar Cobro" className="max-w-md">
