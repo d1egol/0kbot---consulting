@@ -1,4 +1,4 @@
-import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Pencil, ToggleLeft, ToggleRight, PackageMinus } from 'lucide-react'
 import { useToggleProduct } from '@/hooks/useProducts'
 import { useSortable } from '@/hooks/useSortable'
 import { StockBadge, MarginBadge, SortableHeader, toast } from '@/components/shared'
@@ -9,9 +9,10 @@ import { cn } from '@/utils/cn'
 interface Props {
   products: Product[]
   onEdit: (product: Product) => void
+  onAdjustStock?: (product: Product) => void
 }
 
-export function ProductTable({ products, onEdit }: Props) {
+export function ProductTable({ products, onEdit, onAdjustStock }: Props) {
   const toggleProduct = useToggleProduct()
   const { sortedData, sortConfig, requestSort } = useSortable(products)
 
@@ -77,6 +78,15 @@ export function ProductTable({ products, onEdit }: Props) {
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
+                    {onAdjustStock && (
+                      <button
+                        onClick={() => onAdjustStock(p)}
+                        className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        title="Ajustar stock"
+                      >
+                        <PackageMinus className="h-4 w-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleToggle(p)}
                       className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"

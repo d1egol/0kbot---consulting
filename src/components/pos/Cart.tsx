@@ -70,7 +70,11 @@ export function Cart({ onCheckout }: Props) {
                   </span>
 
                   <button
-                    onClick={() => removeItem(item.product.id)}
+                    onClick={() => {
+                      if (confirm(`¿Quitar ${item.product.name} del carrito?`)) {
+                        removeItem(item.product.id)
+                      }
+                    }}
                     className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 className="h-4 w-4" />

@@ -13,6 +13,8 @@ export function SupplierManager() {
   const [showCreate, setShowCreate] = useState(false)
 
   const handleToggle = async (supplier: Supplier) => {
+    const action = supplier.active ? 'desactivar' : 'activar'
+    if (!confirm(`¿${action === 'desactivar' ? 'Desactivar' : 'Activar'} "${supplier.name}"? ${supplier.active ? 'No estará disponible para nuevas órdenes.' : ''}`)) return
     try {
       await toggleSupplier.mutateAsync({ id: supplier.id, active: !supplier.active })
       toast.success(`${supplier.name} ${supplier.active ? 'desactivado' : 'activado'}`)

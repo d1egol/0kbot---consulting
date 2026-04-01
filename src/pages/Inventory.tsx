@@ -4,12 +4,14 @@ import { useProducts } from '@/hooks/useProducts'
 import { CategoryChips, SearchInput, Button, EmptyState } from '@/components/shared'
 import { ProductTable } from '@/components/inventory/ProductTable'
 import { ProductFormModal } from '@/components/inventory/ProductFormModal'
+import { StockAdjustModal } from '@/components/inventory/StockAdjustModal'
 import type { Product, ProductCategory } from '@/lib/types'
 
 export default function Inventory() {
   const [category, setCategory] = useState<ProductCategory | null>(null)
   const [search, setSearch] = useState('')
   const [editProduct, setEditProduct] = useState<Product | null>(null)
+  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [showInactive, setShowInactive] = useState(false)
 
@@ -59,7 +61,7 @@ export default function Inventory() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
         </div>
       ) : products && products.length > 0 ? (
-        <ProductTable products={products} onEdit={setEditProduct} />
+        <ProductTable products={products} onEdit={setEditProduct} onAdjustStock={setAdjustProduct} />
       ) : (
         <EmptyState message="No se encontraron productos" />
       )}
@@ -74,6 +76,12 @@ export default function Inventory() {
         open={!!editProduct}
         onClose={() => setEditProduct(null)}
         product={editProduct}
+      />
+
+      <StockAdjustModal
+        open={!!adjustProduct}
+        onClose={() => setAdjustProduct(null)}
+        product={adjustProduct}
       />
     </div>
   )

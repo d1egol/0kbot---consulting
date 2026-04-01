@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Sale, SaleItem, PaymentMethod, DiscountType } from '@/lib/types'
 
@@ -17,17 +17,24 @@ interface SaleInput {
   cash_change: number | null
 }
 
+const PAGE_SIZE = 30
+
 export function useSales() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['sales'],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { data, error } = await supabase
         .from('sales')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50)
+        .range(pageParam, pageParam + PAGE_SIZE - 1)
       if (error) throw error
       return data as Sale[]
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < PAGE_SIZE) return undefined
+      return allPages.length * PAGE_SIZE
     },
   })
 }
