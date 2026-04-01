@@ -118,6 +118,31 @@ export interface SaleItem {
   qty: number
   unit_price: number
   subtotal: number
+  cost_total?: number | null
+}
+
+export interface StockLot {
+  id: string
+  product_id: string
+  source_type: 'purchase' | 'adjustment'
+  source_id: string
+  purchase_item_id: string | null
+  qty_initial: number
+  qty_remaining: number
+  cost_per_unit: number
+  lot_date: string
+  created_at: string
+}
+
+export interface LotConsumption {
+  id: string
+  lot_id: string
+  consumed_type: 'sale' | 'shrinkage'
+  consumed_id: string
+  consumed_item_id: string | null
+  qty: number
+  cost_per_unit: number
+  created_at: string
 }
 
 export interface ShrinkageRecord {
