@@ -17,18 +17,29 @@ interface SaleInput {
   cash_change: number | null
 }
 
-export function useSales(limit = 100) {
+interface SalesFilter {
+  from?: string  // YYYY-MM-DD
+  to?: string    // YYYY-MM-DD
+  limit?: number
+}
+
+export function useSales({ from, to, limit = 100 }: SalesFilter = {}) {
   return useQuery({
-    queryKey: ['sales', limit],
+    queryKey: ['sales', limit, from ?? null, to ?? null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('sales')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
+      if (from) q = q.gte('date', from)
+      if (to)   q = q.lte('date', `${to}T23:59:59`)
+      const { data, error } = await q
       if (error) throw error
       return (data ?? []) as Sale[]
     },
+    staleTime: 30_000,
+    retry: 1,
   })
 }
 

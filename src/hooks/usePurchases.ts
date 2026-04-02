@@ -20,18 +20,31 @@ interface PurchaseOrderInput {
   }[]
 }
 
-export function usePurchaseOrders(limit = 100) {
+interface PurchaseOrdersFilter {
+  limit?: number
+  from?: string   // YYYY-MM-DD
+  to?: string     // YYYY-MM-DD
+  supplierId?: string
+}
+
+export function usePurchaseOrders({ limit = 100, from, to, supplierId }: PurchaseOrdersFilter = {}) {
   return useQuery({
-    queryKey: ['purchase_orders', limit],
+    queryKey: ['purchase_orders', limit, from ?? null, to ?? null, supplierId ?? null],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('purchase_orders')
         .select('*, supplier:suppliers(name)')
         .order('created_at', { ascending: false })
         .limit(limit)
+      if (from)       q = q.gte('date', from)
+      if (to)         q = q.lte('date', to)
+      if (supplierId) q = q.eq('supplier_id', supplierId)
+      const { data, error } = await q
       if (error) throw error
       return (data ?? []) as (PurchaseOrder & { supplier: { name: string } | null })[]
     },
+    staleTime: 30_000,
+    retry: 1,
   })
 }
 
