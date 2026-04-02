@@ -12,6 +12,7 @@ export default function Purchases() {
   const [lines, setLines] = useState<PurchaseLineData[]>([])
   const [tab, setTab] = useState<'order' | 'history'>('order')
   const [mobileTab, setMobileTab] = useState<'catalog' | 'order'>('catalog')
+  const [repeatSupplierId, setRepeatSupplierId] = useState<string | null | undefined>(undefined)
 
   const { data: products, isLoading } = useProducts(category, search)
 
@@ -33,6 +34,18 @@ export default function Purchases() {
         cost_price: product.cost_price,
       }]
     })
+  }
+
+  const handleRepeat = (supplierId: string | null, repeatLines: PurchaseLineData[]) => {
+    setLines(repeatLines)
+    setRepeatSupplierId(supplierId)
+    setTab('order')
+    setMobileTab('order')
+  }
+
+  const handleClear = () => {
+    setLines([])
+    setRepeatSupplierId(undefined)
   }
 
   return (
@@ -83,7 +96,8 @@ export default function Purchases() {
               <PurchaseForm
                 lines={lines}
                 onLinesChange={setLines}
-                onClear={() => setLines([])}
+                onClear={handleClear}
+                initialSupplierId={repeatSupplierId}
               />
             </div>
           </div>
@@ -134,14 +148,15 @@ export default function Purchases() {
                 <PurchaseForm
                   lines={lines}
                   onLinesChange={setLines}
-                  onClear={() => setLines([])}
+                  onClear={handleClear}
+                  initialSupplierId={repeatSupplierId}
                 />
               )}
             </div>
           </div>
         </>
       ) : (
-        <PurchaseHistory />
+        <PurchaseHistory onRepeat={handleRepeat} />
       )}
     </div>
   )

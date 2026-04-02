@@ -1,8 +1,8 @@
-# Dos Huertos — Sistema de Gesti\u00f3n
+# Dos Huertos — Sistema de Gestión
 
-App de gesti\u00f3n para verdurer\u00eda/fruter\u00eda. Compras, POS, inventario, mermas y mantenedores.
+App de gestión para verdulería/frutería. Compras, POS, inventario, mermas y mantenedores.
 
-## Setup r\u00e1pido
+## Setup rápido
 
 ### 1. Instalar dependencias
 
@@ -23,11 +23,14 @@ VITE_SUPABASE_ANON_KEY=tu-anon-key
 
 En el SQL Editor de Supabase, ejecutar en este orden:
 
-1. `supabase/migrations/001_schema.sql` \u2014 tablas, RLS, \u00edndices
-2. `supabase/migrations/002_rpc_functions.sql` \u2014 funciones at\u00f3micas (register_sale, register_purchase_order, etc.)
-3. `supabase/seed.sql` \u2014 124 productos + 5 proveedores
-4. `supabase/migrations/003_per_product_margin.sql` \u2014 margen por producto, RPC actualizado con conversi\u00f3n de unidades
-5. `supabase/migrations/004_maintainers_and_conversions.sql` \u2014 tabla unidades, conversiones, extensi\u00f3n proveedores
+1. `supabase/migrations/001_schema.sql` — tablas, RLS, índices
+2. `supabase/migrations/002_rpc_functions.sql` — funciones atómicas base
+3. `supabase/seed.sql` — 124 productos + 5 proveedores
+4. `supabase/migrations/003_per_product_margin.sql` — margen por producto
+5. `supabase/migrations/004_maintainers_and_conversions.sql` — tabla unidades, conversiones, extensión proveedores
+6. `supabase/migrations/007_fix_purchase_rpc_units.sql` — corrige stock con conversión de unidades (base_qty) y sale_price por margen individual
+
+> Las migraciones 005 y 006 corresponden a ajustes de esquema internos aplicados en el proyecto original. Si partes desde cero, ejecuta solo las indicadas arriba.
 
 ### 4. Crear usuarios
 
@@ -52,92 +55,128 @@ npm run dev
 - Supabase (Auth + PostgreSQL + Realtime)
 - Zustand (estado local)
 - React Query (sync servidor)
-- React Hook Form + Zod (validaci\u00f3n)
+- React Hook Form + Zod (validación)
 - Desplegado en Vercel
+- **Tests**: Vitest + jsdom + MSW
 
 ## Funcionalidades
 
 ### POS (Cajero / Admin)
-- B\u00fasqueda de productos en tiempo real
-- Carrito con validaci\u00f3n de stock
+- Búsqueda de productos en tiempo real
+- Carrito con validación de stock
 - Descuentos (porcentaje o monto fijo)
 - Checkout con efectivo, tarjeta o transferencia
-- C\u00e1lculo de vuelto
+- Cálculo de vuelto
+- **Historial de ventas** con filtro por fecha, detalle de ítems y anulación (admin)
 
 ### Compras (Comprador / Admin)
-- Cat\u00e1logo de productos con filtro por categor\u00eda
+- Catálogo de productos con filtro por categoría
 - Orden de compra con proveedor, factura y comentarios
-- **Conversi\u00f3n de unidades**: comprar en caja y convertir a kg autom\u00e1ticamente
+- **Conversión de unidades**: comprar en caja y convertir a kg automáticamente
 - Conversiones guardables por producto (ej: 1 caja tomates = 18 kg)
-- Historial de \u00f3rdenes con detalle y anulaci\u00f3n
+- **Repetir última orden**: pre-llena formulario con productos y proveedor de una orden anterior
+- Historial con **filtros por fecha y proveedor**
+- **Badge de variación de precio** (↑↓%) al expandir una orden
 
 ### Inventario (Admin / Comprador)
-- CRUD de productos con categor\u00edas (Frutas, Verduras, Otros, Insumos)
+- CRUD de productos con categorías (Frutas, Verduras, Otros, Insumos)
 - **Margen % editable por producto** (auto-calcula precio de venta)
 - **Sorting** clickable en todas las columnas
 - **Toggle de productos inactivos** (visibles con opacidad reducida)
 - Badges de stock (rojo/amarillo/verde) y margen
-- Suscripci\u00f3n Realtime a cambios
+- Suscripción Realtime a cambios
 
 ### Mermas (Todos los roles)
-- Registro de mermas por producto con raz\u00f3n (vencimiento, da\u00f1o, error, robo, otro)
-- Validaci\u00f3n de stock disponible
-- Valor estimado de p\u00e9rdida
-- Historial con anulaci\u00f3n
+- Registro de mermas por producto con razón (vencimiento, daño, error, robo, otro)
+- Validación de stock disponible
+- Valor estimado de pérdida
+- Historial con anulación
 
 ### Mantenedores (Solo Admin)
-- **Proveedores**: CRUD completo (nombre, contacto, tel\u00e9fono, email, direcci\u00f3n, notas, activo/inactivo)
+- **Proveedores**: CRUD completo (nombre, contacto, teléfono, email, dirección, notas, activo/inactivo)
 - **Unidades**: CRUD de unidades de medida (kg, caja, atado, etc.)
 
-### Autenticaci\u00f3n
-- Login con email/password v\u00eda Supabase Auth
+### Dashboard (Admin)
+- KPIs: ventas hoy, transacciones, ganancia bruta, mermas, compras
+- Filtro por período: hoy, 7 días, 30 días, rango personalizado
+- Gráfico de barras de ventas diarias
+- Top 5 productos, desglose por método de pago, compras por proveedor, mermas por razón
+- Alertas de stock bajo y sin stock
+
+### Autenticación
+- Login con email/password vía Supabase Auth
 - 3 roles: admin (acceso total), buyer (compras + inventario), cashier (POS + mermas)
-- Control de acceso por ruta y por pol\u00edticas RLS en base de datos
+- Control de acceso por ruta y por políticas RLS en base de datos
 
 ## Estructura
 
 ```
 src/
-  pages/        \u2192 Login, POS, Purchases, Inventory, Shrinkage, Maintainers, NotFound
-  components/   \u2192 layout/, pos/, purchases/, inventory/, shrinkage/, maintainers/, shared/
-  hooks/        \u2192 useProducts, usePurchases, useSales, useShrinkage, useSuppliers,
-                  useUnits, useUnitConversions, useSortable
-  store/        \u2192 authStore, cartStore
-  lib/          \u2192 supabase, types, schemas, constants
-  utils/        \u2192 currency, dates, cn
+  pages/        → Login, POS, Purchases, Inventory, Shrinkage, Maintainers, Dashboard, NotFound
+  components/
+    pos/        → ProductSearch, Cart, CheckoutModal, SalesHistory
+    purchases/  → ProductCatalog, PurchaseForm, PurchaseHistory
+    inventory/  → componentes de inventario
+    shrinkage/  → ShrinkageForm, ShrinkageHistory
+    maintainers/→ componentes de mantenedores
+    layout/     → AppShell, Navbar, etc.
+    shared/     → Button, Modal, Toast, SearchInput, SortableHeader, EmptyState
+  hooks/        → useProducts, usePurchases, useSales, useShrinkage, useSuppliers,
+                  useUnits, useUnitConversions, usePriceHistory, useDashboard, useSortable
+  store/        → authStore, cartStore
+  lib/          → supabase, types, schemas, constants
+  utils/        → currency, dates, cn
+  __tests__/    → cartStore.test.ts, currency.test.ts, dates.test.ts, schemas.test.ts
+  mocks/        → handlers.ts (MSW), server.ts
+  test/         → setup.ts (vitest global setup)
 supabase/
-  migrations/   \u2192 001_schema, 002_rpc_functions, 003_per_product_margin,
-                  004_maintainers_and_conversions
-  seed.sql      \u2192 124 productos + 5 proveedores
+  migrations/   → 001_schema, 002_rpc_functions, 003_per_product_margin,
+                  004_maintainers_and_conversions, 007_fix_purchase_rpc_units
+  seed.sql      → 124 productos + 5 proveedores
 ```
 
 ## Base de datos
 
 ### Tablas principales
-| Tabla | Descripci\u00f3n |
+| Tabla | Descripción |
 |-------|------------|
-| `products` | Cat\u00e1logo de productos con stock, precios y margen |
+| `products` | Catálogo de productos con stock, precios y margen |
 | `suppliers` | Proveedores con datos de contacto |
 | `units` | Unidades de medida configurables |
 | `unit_conversions` | Conversiones por producto (ej: 1 caja = 18 kg) |
-| `purchase_orders` | \u00d3rdenes de compra |
-| `purchase_items` | L\u00edneas de compra (con conversi\u00f3n de unidad) |
+| `purchase_orders` | Órdenes de compra |
+| `purchase_items` | Líneas de compra — incluye `purchase_unit`, `conversion_factor`, `base_qty` |
 | `sales` | Ventas |
-| `sale_items` | L\u00edneas de venta |
+| `sale_items` | Líneas de venta |
 | `shrinkage` | Registros de merma |
-| `price_history` | Historial de cambios de precio |
+| `price_history` | Historial de cambios de precio por compra |
 
-### Funciones RPC (at\u00f3micas)
-- `register_purchase_order` \u2014 crea orden, actualiza stock (con conversi\u00f3n), ajusta precios seg\u00fan margen
-- `void_purchase_order` \u2014 anula orden y revierte stock
-- `register_sale` \u2014 valida stock, crea venta, descuenta stock
-- `void_sale` \u2014 anula venta y restaura stock
-- `register_shrinkage` \u2014 registra merma y descuenta stock
-- `void_shrinkage` \u2014 anula merma y restaura stock
+### Funciones RPC (atómicas)
+- `register_purchase_order` — crea orden, persiste conversión de unidades, actualiza stock por `base_qty`, recalcula `sale_price` según `margin_percent` del producto
+- `void_purchase_order` — anula orden y revierte stock usando `base_qty`
+- `register_sale` — valida stock, crea venta, descuenta stock
+- `void_sale` — anula venta y restaura stock
+- `register_shrinkage` — registra merma y descuenta stock
+- `void_shrinkage` — anula merma y restaura stock
+
+## Tests
+
+```bash
+npm test                # Vitest en modo watch
+npm run test:coverage   # Con reporte de cobertura (lcov)
+```
+
+40 tests distribuidos en:
+- `cartStore.test.ts` — lógica completa del carrito (addItem, updateQty, descuentos, totales)
+- `currency.test.ts` — formatCLP para distintos valores
+- `dates.test.ts` — formatDate, formatDateTime, toInputDate
+- `schemas.test.ts` — purchaseLineSchema, productSchema, shrinkageSchema con casos de borde
+
+MSW intercepta llamadas a Supabase en tests de integración.
 
 ## Deploy
 
-La app se despliega autom\u00e1ticamente en **Vercel** al hacer push a `main`.
+La app se despliega automáticamente en **Vercel** al hacer push a `main`.
 
 Variables de entorno requeridas en Vercel:
 - `VITE_SUPABASE_URL`
