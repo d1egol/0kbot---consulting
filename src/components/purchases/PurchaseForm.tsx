@@ -17,9 +17,10 @@ interface Props {
   lines: PurchaseLineData[]
   onLinesChange: (lines: PurchaseLineData[]) => void
   onClear: () => void
+  initialSupplierId?: string | null
 }
 
-export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
+export function PurchaseForm({ lines, onLinesChange, onClear, initialSupplierId }: Props) {
   const user = useAuthStore((s) => s.user)
   const { data: suppliers } = useSuppliers()
   const createPO = useCreatePurchaseOrder()
@@ -40,6 +41,13 @@ export function PurchaseForm({ lines, onLinesChange, onClear }: Props) {
   const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [newSupplierName, setNewSupplierName] = useState('')
   const [newSupplierPhone, setNewSupplierPhone] = useState('')
+
+  // Sincronizar supplierId cuando se repite una orden
+  useEffect(() => {
+    if (initialSupplierId !== undefined) {
+      setSupplierId(initialSupplierId ?? '')
+    }
+  }, [initialSupplierId])
 
   // Conversiones por producto: { [product_id]: UnitConversion[] }
   const [conversionsMap, setConversionsMap] = useState<Record<string, UnitConversion[]>>({})

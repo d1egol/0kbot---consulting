@@ -85,3 +85,12 @@ export function useVoidPurchaseOrder() {
     },
   })
 }
+
+export async function fetchPurchaseItems(orderId: string): Promise<PurchaseItem[]> {
+  const { data, error } = await supabase
+    .from('purchase_items')
+    .select('*')
+    .eq('purchase_order_id', orderId)
+  if (error) throw error
+  return data as PurchaseItem[]
+}
