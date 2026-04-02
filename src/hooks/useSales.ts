@@ -32,8 +32,10 @@ export function useSales({ from, to, limit = 100 }: SalesFilter = {}) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
-      if (from) q = q.gte('date', from)
-      if (to)   q = q.lte('date', `${to}T23:59:59`)
+      // Convertir fechas locales a UTC usando el timezone del navegador
+      // Ej: '2024-03-15' en Chile (UTC-4) → '2024-03-15T04:00:00.000Z' inicio del día en UTC
+      if (from) q = q.gte('date', new Date(`${from}T00:00:00`).toISOString())
+      if (to)   q = q.lte('date', new Date(`${to}T23:59:59`).toISOString())
       const { data, error } = await q
       if (error) throw error
       return (data ?? []) as Sale[]

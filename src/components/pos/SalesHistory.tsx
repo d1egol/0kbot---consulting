@@ -4,9 +4,8 @@ import { useSales, useSaleItems, useVoidSale } from '@/hooks/useSales'
 import { useAuthStore } from '@/store/authStore'
 import { EmptyState, Button, toast } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
-import { formatDateTime } from '@/utils/dates'
+import { formatDateTime, toInputDate } from '@/utils/dates'
 import { cn } from '@/utils/cn'
-import { toInputDate } from '@/utils/dates'
 
 const paymentIcon: Record<string, typeof Banknote> = {
   cash: Banknote,

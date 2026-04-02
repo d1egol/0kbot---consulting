@@ -27,7 +27,7 @@ export function usePriorCostPrices(
   beforeTimestamp: string | null,
 ) {
   return useQuery({
-    queryKey: ['price_history', 'prior', productIds.sort().join(','), beforeTimestamp],
+    queryKey: ['price_history', 'prior', [...productIds].sort().join(','), beforeTimestamp],
     queryFn: async (): Promise<Record<string, number>> => {
       if (productIds.length === 0 || !beforeTimestamp) return {}
       const { data, error } = await supabase
