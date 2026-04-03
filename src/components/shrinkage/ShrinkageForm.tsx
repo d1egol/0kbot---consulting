@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
 import { useCreateShrinkage } from '@/hooks/useShrinkage'
+import { useLocationStore } from '@/store/locationStore'
 import { CategoryChips, SearchInput, Button, toast, StockBadge } from '@/components/shared'
 import { SHRINKAGE_REASONS } from '@/lib/constants'
 import { formatCLP } from '@/utils/currency'
@@ -16,6 +17,7 @@ export function ShrinkageForm() {
   const [date, setDate] = useState(toInputDate())
   const [notes, setNotes] = useState('')
 
+  const activeLocationId = useLocationStore((s) => s.activeLocationId)
   const { data: products } = useProducts(category, search)
   const createShrinkage = useCreateShrinkage()
 
@@ -24,6 +26,10 @@ export function ShrinkageForm() {
   const handleSubmit = async () => {
     if (!selected) {
       toast.error('Selecciona un producto')
+      return
+    }
+    if (!activeLocationId) {
+      toast.error('Selecciona una ubicación en el encabezado')
       return
     }
     if (qty <= 0) {
@@ -44,6 +50,7 @@ export function ShrinkageForm() {
         reason,
         notes: notes || undefined,
         date,
+        location_id: activeLocationId,
       })
       toast.success(`Merma registrada: ${qty} ${selected.unit} de ${selected.name}`)
       setSelected(null)

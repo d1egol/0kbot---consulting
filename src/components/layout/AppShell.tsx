@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { LogOut, Sprout } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { SyncIndicator, ToastContainer } from '@/components/shared'
+import { SyncIndicator, ToastContainer, LocationSelector } from '@/components/shared'
 import { TabBar } from './TabBar'
 
 const roleLabels: Record<string, string> = {
@@ -37,6 +37,7 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-4">
+            <LocationSelector />
             <SyncIndicator />
             <div className="hidden items-center gap-2 sm:flex">
               <span className="text-sm text-gray-600">{displayName}</span>

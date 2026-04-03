@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useCartStore } from '@/store/cartStore'
 import { ProductSearch, Cart, CheckoutModal, SalesHistory } from '@/components/pos'
 import { toast } from '@/components/shared'
@@ -9,7 +10,8 @@ export default function POS() {
   const [search, setSearch] = useState('')
   const [showCheckout, setShowCheckout] = useState(false)
   const [tab, setTab] = useState<'pos' | 'history'>('pos')
-  const { data: products } = useProducts(null, search)
+  const debouncedSearch = useDebounce(search)
+  const { data: products } = useProducts(null, debouncedSearch)
   const addItem = useCartStore((s) => s.addItem)
   const items = useCartStore((s) => s.items)
 

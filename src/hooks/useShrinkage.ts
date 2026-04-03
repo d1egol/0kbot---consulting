@@ -10,6 +10,7 @@ interface ShrinkageInput {
   reason: ShrinkageReason
   notes?: string
   date?: string
+  location_id: string | null
 }
 
 export function useShrinkageList(limit = 100) {
@@ -41,6 +42,7 @@ export function useCreateShrinkage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shrinkage'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['location_stock'] })
     },
   })
 }

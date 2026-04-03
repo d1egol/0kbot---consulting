@@ -74,6 +74,7 @@ export interface PurchaseOrder {
   total_cost: number
   voided: boolean
   voided_at: string | null
+  location_id: string | null
   created_at: string
   supplier?: Supplier
   items?: PurchaseItem[]
@@ -106,6 +107,7 @@ export interface Sale {
   cash_change: number | null
   voided: boolean
   voided_at: string | null
+  location_id: string | null
   created_at: string
   items?: SaleItem[]
 }
@@ -118,6 +120,31 @@ export interface SaleItem {
   qty: number
   unit_price: number
   subtotal: number
+  cost_total?: number | null
+}
+
+export interface StockLot {
+  id: string
+  product_id: string
+  source_type: 'purchase' | 'adjustment'
+  source_id: string
+  purchase_item_id: string | null
+  qty_initial: number
+  qty_remaining: number
+  cost_per_unit: number
+  lot_date: string
+  created_at: string
+}
+
+export interface LotConsumption {
+  id: string
+  lot_id: string
+  consumed_type: 'sale' | 'shrinkage'
+  consumed_id: string
+  consumed_item_id: string | null
+  qty: number
+  cost_per_unit: number
+  created_at: string
 }
 
 export interface ShrinkageRecord {
@@ -131,5 +158,35 @@ export interface ShrinkageRecord {
   estimated_value: number | null
   notes: string | null
   voided: boolean
+  location_id: string | null
+  created_at: string
+}
+
+export interface Location {
+  id: string
+  name: string
+  type: 'store' | 'warehouse' | 'online'
+  address: string | null
+  active: boolean
+  sort_order: number
+  created_at: string
+}
+
+export interface LocationStock {
+  location_id: string
+  product_id: string
+  qty: number
+  updated_at: string
+}
+
+export interface StockTransfer {
+  id: string
+  from_location_id: string | null
+  to_location_id: string | null
+  product_id: string
+  product_name: string
+  qty: number
+  transferred_by: string
+  notes: string | null
   created_at: string
 }

@@ -9,6 +9,7 @@ import POS from '@/pages/POS'
 import Shrinkage from '@/pages/Shrinkage'
 import Maintainers from '@/pages/Maintainers'
 import Dashboard from '@/pages/Dashboard'
+import Transfers from '@/pages/Transfers'
 import NotFound from '@/pages/NotFound'
 
 function DefaultRedirect() {
@@ -78,6 +79,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <Maintainers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="transfers"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'buyer']}>
+              <Transfers />
             </ProtectedRoute>
           }
         />

@@ -15,7 +15,9 @@ interface AuthState {
 
 function extractRole(user: User | null): UserRole | null {
   if (!user) return null
-  const role = user.user_metadata?.role as string | undefined
+  // Leer desde app_metadata (no editable por el usuario, solo via service_role key)
+  // Ver migración 007_roles_app_metadata.sql para el contexto de seguridad
+  const role = user.app_metadata?.role as string | undefined
   if (role === 'admin' || role === 'buyer' || role === 'cashier') return role
   return null
 }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/lib/types'
@@ -10,7 +11,8 @@ interface SaleRow {
   sale_items: Array<{
     qty: number
     unit_price: number
-    products: { cost_price: number } | null
+    subtotal: number
+    cost_total: number | null
   }>
 }
 
@@ -70,7 +72,7 @@ export function useDashboard(options: DashboardOptions = { range: '7d' }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
-        .select('id, date, total, payment_method, sale_items(qty, unit_price, products(cost_price))')
+        .select('id, date, total, payment_method, sale_items(qty, unit_price, subtotal, cost_total)')
         .gte('date', `${rangeFrom}T00:00:00`)
         .lte('date', `${rangeTo}T23:59:59`)
         .eq('voided', false)
@@ -160,148 +162,138 @@ export function useDashboard(options: DashboardOptions = { range: '7d' }) {
     retry: 1,
   })
 
-  // --- KPIs del rango ---
-  const salesData = salesQuery.data ?? []
-  const todaySales = salesData.filter((s) => s.date.startsWith(today))
+  const isLoading =
+    salesQuery.isLoading ||
+    shrinkageQuery.isLoading ||
+    topProductsQuery.isLoading ||
+    productsQuery.isLoading ||
+    purchasesQuery.isLoading
 
-  const salesToday = todaySales.reduce((sum, s) => sum + Number(s.total), 0)
-  const transactionsToday = todaySales.length
+  // Todas las agregaciones memoizadas: solo se recalculan cuando cambian los datos de queries
+  const stats = useMemo(() => {
+    const salesData = salesQuery.data ?? []
+    const shrinkageData = shrinkageQuery.data ?? []
+    const purchasesData = purchasesQuery.data ?? []
+    const products = productsQuery.data ?? []
 
-  // Ganancia bruta hoy
-  let grossProfitToday = 0
-  for (const sale of todaySales) {
-    for (const item of sale.sale_items ?? []) {
-      const cost = item.products?.cost_price ?? 0
-      grossProfitToday += Number(item.qty) * (Number(item.unit_price) - Number(cost))
+    // --- KPIs hoy ---
+    const todaySales = salesData.filter((s) => s.date.startsWith(today))
+    const salesToday = todaySales.reduce((sum, s) => sum + Number(s.total), 0)
+    const transactionsToday = todaySales.length
+    let grossProfitToday = 0
+    for (const sale of todaySales) {
+      for (const item of sale.sale_items ?? []) {
+        grossProfitToday += Number(item.subtotal) - Number(item.cost_total ?? 0)
+      }
     }
-  }
 
-  // Totales del rango completo
-  const salesTotal = salesData.reduce((sum, s) => sum + Number(s.total), 0)
-  const transactionsTotal = salesData.length
-
-  let grossProfitTotal = 0
-  for (const sale of salesData) {
-    for (const item of sale.sale_items ?? []) {
-      const cost = item.products?.cost_price ?? 0
-      grossProfitTotal += Number(item.qty) * (Number(item.unit_price) - Number(cost))
+    // --- KPIs rango completo ---
+    const salesTotal = salesData.reduce((sum, s) => sum + Number(s.total), 0)
+    const transactionsTotal = salesData.length
+    let grossProfitTotal = 0
+    for (const sale of salesData) {
+      for (const item of sale.sale_items ?? []) {
+        grossProfitTotal += Number(item.subtotal) - Number(item.cost_total ?? 0)
+      }
     }
-  }
 
-  // Mermas
-  const shrinkageData = shrinkageQuery.data ?? []
-  const shrinkageToday = shrinkageData
-    .filter((s) => s.date === today)
-    .reduce((sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0)
+    // --- Mermas ---
+    const shrinkageToday = shrinkageData
+      .filter((s) => s.date === today)
+      .reduce((sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0)
+    const shrinkageTotal = shrinkageData.reduce(
+      (sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0,
+    )
 
-  const shrinkageTotal = shrinkageData.reduce(
-    (sum, s) => sum + (s.estimated_value ? Number(s.estimated_value) : 0), 0,
-  )
-
-  // --- Gráfico barras ---
-  const daysCount = Math.max(1, Math.ceil((new Date(`${rangeTo}T12:00:00`).getTime() - new Date(`${rangeFrom}T12:00:00`).getTime()) / 86400000) + 1)
-  const daysList = Array.from({ length: Math.min(daysCount, 60) }, (_, i) => {
-    const d = new Date(`${rangeFrom}T12:00:00`)
-    d.setDate(d.getDate() + i)
-    return d.toISOString().split('T')[0]!
-  })
-
-  const salesByDay: Record<string, number> = Object.fromEntries(daysList.map((d) => [d, 0]))
-  for (const s of salesData) {
-    const day = s.date.split('T')[0]!
-    if (day in salesByDay) salesByDay[day]! += Number(s.total)
-  }
-
-  const chartData = daysList.map((d) => ({
-    date: d,
-    label: new Date(`${d}T12:00:00`).toLocaleDateString('es-CL', {
-      weekday: daysCount <= 14 ? 'short' : undefined,
-      day: 'numeric',
-      month: daysCount > 14 ? 'short' : undefined,
-    }),
-    total: salesByDay[d] ?? 0,
-  }))
-
-  // --- Desglose por método de pago ---
-  const paymentBreakdown: Record<string, { count: number; total: number }> = {}
-  for (const s of salesData) {
-    const method = s.payment_method || 'unknown'
-    if (!paymentBreakdown[method]) paymentBreakdown[method] = { count: 0, total: 0 }
-    paymentBreakdown[method]!.count += 1
-    paymentBreakdown[method]!.total += Number(s.total)
-  }
-
-  // --- Top 5 productos ---
-  const productMap: Record<string, { name: string; qty: number; revenue: number }> = {}
-  for (const item of topProductsQuery.data ?? []) {
-    if (!productMap[item.product_id]) {
-      productMap[item.product_id] = { name: item.product_name, qty: 0, revenue: 0 }
+    // --- Gráfico de barras por día ---
+    const daysCount = Math.max(1, Math.ceil(
+      (new Date(`${rangeTo}T12:00:00`).getTime() - new Date(`${rangeFrom}T12:00:00`).getTime()) / 86400000
+    ) + 1)
+    const daysList = Array.from({ length: Math.min(daysCount, 60) }, (_, i) => {
+      const d = new Date(`${rangeFrom}T12:00:00`)
+      d.setDate(d.getDate() + i)
+      return d.toISOString().split('T')[0]!
+    })
+    const salesByDay: Record<string, number> = Object.fromEntries(daysList.map((d) => [d, 0]))
+    for (const s of salesData) {
+      const day = s.date.split('T')[0]!
+      if (day in salesByDay) salesByDay[day]! += Number(s.total)
     }
-    productMap[item.product_id]!.qty += Number(item.qty)
-    productMap[item.product_id]!.revenue += Number(item.subtotal)
-  }
-  const topProducts = Object.values(productMap)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 5)
+    const chartData = daysList.map((d) => ({
+      date: d,
+      label: new Date(`${d}T12:00:00`).toLocaleDateString('es-CL', {
+        weekday: daysCount <= 14 ? 'short' : undefined,
+        day: 'numeric',
+        month: daysCount > 14 ? 'short' : undefined,
+      }),
+      total: salesByDay[d] ?? 0,
+    }))
 
-  // --- Compras por proveedor ---
-  const purchasesData = purchasesQuery.data ?? []
-  const purchasesTotal = purchasesData.reduce((sum, p) => sum + Number(p.total_cost), 0)
+    // --- Desglose por método de pago ---
+    const paymentBreakdown: Record<string, { count: number; total: number }> = {}
+    for (const s of salesData) {
+      const method = s.payment_method || 'unknown'
+      if (!paymentBreakdown[method]) paymentBreakdown[method] = { count: 0, total: 0 }
+      paymentBreakdown[method]!.count += 1
+      paymentBreakdown[method]!.total += Number(s.total)
+    }
 
-  const purchasesBySupplier: Record<string, { count: number; total: number }> = {}
-  for (const p of purchasesData) {
-    const name = p.supplier?.name ?? 'Sin proveedor'
-    if (!purchasesBySupplier[name]) purchasesBySupplier[name] = { count: 0, total: 0 }
-    purchasesBySupplier[name]!.count += 1
-    purchasesBySupplier[name]!.total += Number(p.total_cost)
-  }
-  const supplierBreakdown = Object.entries(purchasesBySupplier)
-    .map(([name, data]) => ({ name, ...data }))
-    .sort((a, b) => b.total - a.total)
+    // --- Top 5 productos ---
+    const productMap: Record<string, { name: string; qty: number; revenue: number }> = {}
+    for (const item of topProductsQuery.data ?? []) {
+      if (!productMap[item.product_id]) {
+        productMap[item.product_id] = { name: item.product_name, qty: 0, revenue: 0 }
+      }
+      productMap[item.product_id]!.qty += Number(item.qty)
+      productMap[item.product_id]!.revenue += Number(item.subtotal)
+    }
+    const topProducts = Object.values(productMap)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
 
-  // --- Mermas por razón ---
-  const shrinkageByReason: Record<string, { count: number; total: number }> = {}
-  for (const s of shrinkageData) {
-    if (!shrinkageByReason[s.reason]) shrinkageByReason[s.reason] = { count: 0, total: 0 }
-    shrinkageByReason[s.reason]!.count += 1
-    shrinkageByReason[s.reason]!.total += s.estimated_value ? Number(s.estimated_value) : 0
-  }
-  const shrinkageBreakdown = Object.entries(shrinkageByReason)
-    .map(([reason, data]) => ({ reason, ...data }))
-    .sort((a, b) => b.total - a.total)
+    // --- Compras por proveedor ---
+    const purchasesTotal = purchasesData.reduce((sum, p) => sum + Number(p.total_cost), 0)
+    const purchasesBySupplier: Record<string, { count: number; total: number }> = {}
+    for (const p of purchasesData) {
+      const name = p.supplier?.name ?? 'Sin proveedor'
+      if (!purchasesBySupplier[name]) purchasesBySupplier[name] = { count: 0, total: 0 }
+      purchasesBySupplier[name]!.count += 1
+      purchasesBySupplier[name]!.total += Number(p.total_cost)
+    }
+    const supplierBreakdown = Object.entries(purchasesBySupplier)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.total - a.total)
 
-  // --- Alertas de stock ---
-  const products = productsQuery.data ?? []
-  const criticalStock = products.filter((p) => Number(p.stock) === 0)
-  const lowStock = products.filter((p) => Number(p.stock) > 0 && Number(p.stock) < Number(p.min_stock))
+    // --- Mermas por razón ---
+    const shrinkageByReason: Record<string, { count: number; total: number }> = {}
+    for (const s of shrinkageData) {
+      if (!shrinkageByReason[s.reason]) shrinkageByReason[s.reason] = { count: 0, total: 0 }
+      shrinkageByReason[s.reason]!.count += 1
+      shrinkageByReason[s.reason]!.total += s.estimated_value ? Number(s.estimated_value) : 0
+    }
+    const shrinkageBreakdown = Object.entries(shrinkageByReason)
+      .map(([reason, data]) => ({ reason, ...data }))
+      .sort((a, b) => b.total - a.total)
+
+    // --- Alertas de stock ---
+    const criticalStock = products.filter((p) => Number(p.stock) === 0)
+    const lowStock = products.filter((p) => Number(p.stock) > 0 && Number(p.stock) < Number(p.min_stock))
+
+    return {
+      salesToday, transactionsToday, grossProfitToday, shrinkageToday,
+      salesTotal, transactionsTotal, grossProfitTotal, shrinkageTotal, purchasesTotal,
+      chartData, topProducts, paymentBreakdown, supplierBreakdown, shrinkageBreakdown,
+      criticalStock, lowStock,
+    }
+  }, [
+    salesQuery.data, shrinkageQuery.data, purchasesQuery.data,
+    productsQuery.data, topProductsQuery.data,
+    rangeFrom, rangeTo, today,
+  ])
 
   return {
-    isLoading:
-      salesQuery.isLoading ||
-      shrinkageQuery.isLoading ||
-      topProductsQuery.isLoading ||
-      productsQuery.isLoading ||
-      purchasesQuery.isLoading,
-    // KPIs hoy
-    salesToday,
-    transactionsToday,
-    grossProfitToday,
-    shrinkageToday,
-    // KPIs rango
-    salesTotal,
-    transactionsTotal,
-    grossProfitTotal,
-    shrinkageTotal,
-    purchasesTotal,
-    // Detalles
-    chartData,
-    topProducts,
-    paymentBreakdown,
-    supplierBreakdown,
-    shrinkageBreakdown,
-    criticalStock,
-    lowStock,
-    // Meta
+    isLoading,
+    ...stats,
     rangeFrom,
     rangeTo,
   }
