@@ -27,9 +27,10 @@ export function useProducts(category?: ProductCategory | null, search?: string, 
   })
 
   // Suscripción Realtime para cambios en productos
+  // Canal único por instancia para evitar error al agregar listeners a canal ya suscrito
   useEffect(() => {
     const channel = supabase
-      .channel('products-changes')
+      .channel(`products-changes-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
