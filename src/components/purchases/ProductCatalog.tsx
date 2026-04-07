@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { Minus, Plus, Check } from 'lucide-react'
-import { CategoryChips, SearchInput, EmptyState } from '@/components/shared'
+import { CategoryChips, SearchInput, EmptyState, Spinner } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
 import { cn } from '@/utils/cn'
-import type { Product } from '@/lib/types'
+import type { Product, ProductCategory } from '@/lib/types'
 import type { PurchaseLineData } from '@/lib/schemas'
 
 interface Props {
   products: Product[]
   isLoading: boolean
-  category: string | null
+  category: ProductCategory | null
   search: string
-  onCategoryChange: (cat: string | null) => void
+  onCategoryChange: (cat: ProductCategory | null) => void
   onSearchChange: (s: string) => void
   onSelect: (product: Product, qty: number) => void
   existingLines?: PurchaseLineData[]
@@ -58,7 +58,7 @@ export function ProductCatalog({
       <div className={cn('overflow-y-auto p-2', mobileFullScroll ? 'max-h-none' : 'max-h-[60vh]')}>
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+            <Spinner />
           </div>
         ) : products.length === 0 ? (
           <EmptyState message="Sin resultados" />

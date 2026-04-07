@@ -1,13 +1,17 @@
 import { CATEGORIES } from '@/lib/constants'
+import type { ProductCategory } from '@/lib/types'
 import { cn } from '@/utils/cn'
 
 interface Props {
-  selected: string | null
-  onChange: (category: string | null) => void
+  selected: ProductCategory | null
+  onChange: (category: ProductCategory | null) => void
 }
 
 export function CategoryChips({ selected, onChange }: Props) {
-  const options = [{ value: null, label: 'Todas' }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]
+  const options: { value: ProductCategory | null; label: string }[] = [
+    { value: null, label: 'Todas' },
+    ...CATEGORIES.map((c) => ({ value: c, label: c })),
+  ]
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1">

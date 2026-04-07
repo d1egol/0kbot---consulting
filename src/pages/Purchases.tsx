@@ -88,7 +88,7 @@ export default function Purchases() {
                 isLoading={isLoading}
                 category={category}
                 search={search}
-                onCategoryChange={(c) => setCategory(c as ProductCategory | null)}
+                onCategoryChange={setCategory}
                 onSearchChange={setSearch}
                 onSelect={addProduct}
                 existingLines={lines}
@@ -140,7 +140,7 @@ export default function Purchases() {
                   isLoading={isLoading}
                   category={category}
                   search={search}
-                  onCategoryChange={(c) => setCategory(c as ProductCategory | null)}
+                  onCategoryChange={setCategory}
                   onSearchChange={setSearch}
                   onSelect={addProduct}
                   existingLines={lines}

@@ -190,3 +190,8 @@ export interface StockTransfer {
   notes: string | null
   created_at: string
 }
+
+export interface StockTransferWithLocations extends StockTransfer {
+  from_location: { name: string } | null
+  to_location: { name: string } | null
+}

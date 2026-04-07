@@ -5,7 +5,7 @@ import { useStockTransfers, useTransferStock } from '@/hooks/useStockTransfers'
 import { useAuthStore } from '@/store/authStore'
 import { useLocationStore } from '@/store/locationStore'
 import { useProducts } from '@/hooks/useProducts'
-import { Button, Modal, toast } from '@/components/shared'
+import { Button, Modal, toast, Spinner } from '@/components/shared'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -152,7 +152,7 @@ export default function Transfers() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+          <Spinner size="lg" />
         </div>
       ) : transfers.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white py-16 text-center">
@@ -183,13 +183,13 @@ export default function Transfers() {
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1 text-gray-600">
                       <MapPin className="h-3 w-3 text-gray-400" />
-                      {(t as any).from_location?.name ?? '—'}
+                      {t.from_location?.name ?? '—'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-1 text-gray-600">
                       <MapPin className="h-3 w-3 text-primary-400" />
-                      {(t as any).to_location?.name ?? '—'}
+                      {t.to_location?.name ?? '—'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">{t.qty}</td>

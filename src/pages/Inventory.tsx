@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus, Eye, EyeOff } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { useDebounce } from '@/hooks/useDebounce'
-import { CategoryChips, SearchInput, Button, EmptyState } from '@/components/shared'
+import { CategoryChips, SearchInput, Button, EmptyState, Spinner } from '@/components/shared'
 import { ProductTable } from '@/components/inventory/ProductTable'
 import { ProductFormModal } from '@/components/inventory/ProductFormModal'
 import { StockAdjustModal } from '@/components/inventory/StockAdjustModal'
@@ -49,7 +49,7 @@ export default function Inventory() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <CategoryChips selected={category} onChange={(c) => setCategory(c as ProductCategory | null)} />
+        <CategoryChips selected={category} onChange={setCategory} />
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -60,7 +60,7 @@ export default function Inventory() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+          <Spinner size="lg" />
         </div>
       ) : products && products.length > 0 ? (
         <ProductTable products={products} onEdit={setEditProduct} onAdjustStock={setAdjustProduct} />

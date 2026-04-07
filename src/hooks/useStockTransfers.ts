@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { StockTransfer } from '@/lib/types'
-
-interface TransferRow extends StockTransfer {
-  from_location?: { name: string } | null
-  to_location?: { name: string } | null
-}
+import type { StockTransferWithLocations } from '@/lib/types'
 
 export function useStockTransfers(limit = 50) {
   return useQuery({
@@ -22,7 +17,7 @@ export function useStockTransfers(limit = 50) {
         .order('created_at', { ascending: false })
         .limit(limit)
       if (error) throw error
-      return (data ?? []) as unknown as TransferRow[]
+      return (data ?? []) as unknown as StockTransferWithLocations[]
     },
     staleTime: 30_000,
     retry: 1,

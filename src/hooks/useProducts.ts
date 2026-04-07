@@ -1,13 +1,11 @@
-import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Product, ProductCategory } from '@/lib/types'
 import type { ProductFormData } from '@/lib/schemas'
 
 export function useProducts(category?: ProductCategory | null, search?: string, showInactive = false) {
-  const queryClient = useQueryClient()
-
-  const query = useQuery({
+  // Realtime: la suscripción global vive en QueryProvider/RealtimeBridge.
+  return useQuery({
     queryKey: ['products', { category, search, showInactive }],
     queryFn: async () => {
       let q = supabase
@@ -25,27 +23,6 @@ export function useProducts(category?: ProductCategory | null, search?: string, 
       return data as Product[]
     },
   })
-
-  // Suscripción Realtime para cambios en productos
-  // Canal único por instancia para evitar error al agregar listeners a canal ya suscrito
-  useEffect(() => {
-    const channel = supabase
-      .channel(`products-changes-${Math.random().toString(36).slice(2)}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['products'] })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [queryClient])
-
-  return query
 }
 
 export function useAllProducts() {

@@ -83,11 +83,12 @@ export const useCartStore = create<CartState>((set, get) => ({
   getDiscountAmount: () => {
     const { discountType, discountValue } = get()
     const subtotal = get().getSubtotal()
+    const safeValue = Number.isFinite(discountValue) && discountValue > 0 ? discountValue : 0
     if (discountType === 'percent') {
-      const capped = Math.min(discountValue, 100)
-      return Math.round(subtotal * capped / 100)
+      const capped = Math.min(safeValue, 100)
+      return Math.round((subtotal * capped) / 100)
     }
-    return Math.min(discountValue, subtotal)
+    return Math.min(safeValue, subtotal)
   },
 
   getTotal: () => {

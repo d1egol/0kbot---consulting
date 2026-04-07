@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Product } from '@/lib/types'
+import type { Product, PaymentMethod } from '@/lib/types'
 
 interface SaleRow {
   id: string
@@ -230,9 +230,9 @@ export function useDashboard(options: DashboardOptions = { range: '7d' }) {
     }))
 
     // --- Desglose por método de pago ---
-    const paymentBreakdown: Record<string, { count: number; total: number }> = {}
+    const paymentBreakdown: Partial<Record<PaymentMethod, { count: number; total: number }>> = {}
     for (const s of salesData) {
-      const method = s.payment_method || 'unknown'
+      const method = (s.payment_method as PaymentMethod) || 'cash'
       if (!paymentBreakdown[method]) paymentBreakdown[method] = { count: 0, total: 0 }
       paymentBreakdown[method]!.count += 1
       paymentBreakdown[method]!.total += Number(s.total)

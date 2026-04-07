@@ -9,6 +9,21 @@ export interface LocationStockRow {
   updated_at: string
 }
 
+interface RawLocationStockRow {
+  location_id: string
+  product_id: string
+  qty: number | string
+  updated_at: string
+  // Supabase devuelve relación foreign key como array (incluso en relaciones 1-1)
+  locations: { name: string }[] | { name: string } | null
+}
+
+function locationName(locations: RawLocationStockRow['locations']): string {
+  if (!locations) return ''
+  if (Array.isArray(locations)) return locations[0]?.name ?? ''
+  return locations.name
+}
+
 // Stock de todos los productos para una ubicación
 export function useLocationStock(locationId: string | null) {
   return useQuery({
@@ -21,9 +36,9 @@ export function useLocationStock(locationId: string | null) {
         .eq('location_id', locationId)
         .gt('qty', 0)
       if (error) throw error
-      return (data ?? []).map((row: any) => ({
+      return (data ?? []).map((row) => ({
         location_id: row.location_id,
-        location_name: row.locations?.name ?? '',
+        location_name: locationName(row.locations as RawLocationStockRow['locations']),
         product_id: row.product_id,
         qty: Number(row.qty),
         updated_at: row.updated_at,
@@ -47,9 +62,9 @@ export function useProductLocationStock(productId: string | null) {
         .eq('product_id', productId)
         .gt('qty', 0)
       if (error) throw error
-      return (data ?? []).map((row: any) => ({
+      return (data ?? []).map((row) => ({
         location_id: row.location_id,
-        location_name: row.locations?.name ?? '',
+        location_name: locationName(row.locations as RawLocationStockRow['locations']),
         product_id: row.product_id,
         qty: Number(row.qty),
         updated_at: row.updated_at,
@@ -71,9 +86,9 @@ export function useAllLocationStock() {
         .select('location_id, product_id, qty, updated_at, locations(name)')
         .gt('qty', 0)
       if (error) throw error
-      return (data ?? []).map((row: any) => ({
+      return (data ?? []).map((row) => ({
         location_id: row.location_id,
-        location_name: row.locations?.name ?? '',
+        location_name: locationName(row.locations as RawLocationStockRow['locations']),
         product_id: row.product_id,
         qty: Number(row.qty),
         updated_at: row.updated_at,
