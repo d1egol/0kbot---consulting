@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight, Ban, Banknote, CreditCard, ArrowRightLeft } from 'lucide-react'
 import { useSales, useSaleItems, useVoidSale } from '@/hooks/useSales'
 import { useAuthStore } from '@/store/authStore'
-import { EmptyState, Button, toast } from '@/components/shared'
+import { EmptyState, Button, toast, Spinner, DateRangeFilter } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
 import { formatDateTime, toInputDate } from '@/utils/dates'
 import { cn } from '@/utils/cn'
@@ -47,35 +47,24 @@ export function SalesHistory() {
 
   return (
     <div className="space-y-3">
-      {/* Filtro de fechas */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
-        <span className="text-xs font-medium text-gray-500">Período:</span>
-        <input
-          type="date"
-          value={from}
-          max={to}
-          onChange={(e) => setFrom(e.target.value)}
-          className="h-8 rounded-lg border border-gray-200 px-2 text-sm focus:border-primary-300 focus:outline-none"
-        />
-        <span className="text-xs text-gray-400">a</span>
-        <input
-          type="date"
-          value={to}
-          min={from}
-          onChange={(e) => setTo(e.target.value)}
-          className="h-8 rounded-lg border border-gray-200 px-2 text-sm focus:border-primary-300 focus:outline-none"
-        />
-        {totals && totals.count > 0 && (
-          <span className="ml-auto text-xs text-gray-500">
-            {totals.count} venta{totals.count !== 1 ? 's' : ''} ·{' '}
-            <span className="font-semibold text-gray-900">{formatCLP(totals.total)}</span>
-          </span>
-        )}
-      </div>
+      <DateRangeFilter
+        from={from}
+        to={to}
+        onFromChange={setFrom}
+        onToChange={setTo}
+        rightSlot={
+          totals && totals.count > 0 ? (
+            <span className="text-xs text-gray-500">
+              {totals.count} venta{totals.count !== 1 ? 's' : ''} ·{' '}
+              <span className="font-semibold text-gray-900">{formatCLP(totals.total)}</span>
+            </span>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+          <Spinner size="lg" />
         </div>
       ) : !sales || sales.length === 0 ? (
         <EmptyState message="Sin ventas en el período seleccionado" />

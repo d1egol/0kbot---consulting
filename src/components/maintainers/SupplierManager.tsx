@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useSuppliers, useToggleSupplier } from '@/hooks/useSuppliers'
-import { Button, EmptyState, toast } from '@/components/shared'
+import { Button, EmptyState, toast, Spinner } from '@/components/shared'
 import { SupplierFormModal } from './SupplierFormModal'
 import { cn } from '@/utils/cn'
 import type { Supplier } from '@/lib/types'
@@ -26,7 +26,7 @@ export function SupplierManager() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+        <Spinner size="lg" />
       </div>
     )
   }

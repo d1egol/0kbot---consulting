@@ -4,7 +4,7 @@ import { usePurchaseOrders, usePurchaseItems, useVoidPurchaseOrder, fetchPurchas
 import { usePriorCostPrices } from '@/hooks/usePriceHistory'
 import { useSuppliers } from '@/hooks/useSuppliers'
 import { useAuthStore } from '@/store/authStore'
-import { EmptyState, Button, toast } from '@/components/shared'
+import { EmptyState, Button, toast, Spinner, DateRangeFilter } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
 import { formatDate } from '@/utils/dates'
 import { cn } from '@/utils/cn'
@@ -78,26 +78,13 @@ export function PurchaseHistory({ onRepeat }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Filtro bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
-        <span className="text-xs font-medium text-gray-500">Filtrar:</span>
-        <input
-          type="date"
-          value={from}
-          max={to || undefined}
-          onChange={(e) => setFrom(e.target.value)}
-          placeholder="Desde"
-          className="h-8 rounded-lg border border-gray-200 px-2 text-sm focus:border-primary-300 focus:outline-none"
-        />
-        <span className="text-xs text-gray-400">a</span>
-        <input
-          type="date"
-          value={to}
-          min={from || undefined}
-          onChange={(e) => setTo(e.target.value)}
-          placeholder="Hasta"
-          className="h-8 rounded-lg border border-gray-200 px-2 text-sm focus:border-primary-300 focus:outline-none"
-        />
+      <DateRangeFilter
+        from={from}
+        to={to}
+        onFromChange={setFrom}
+        onToChange={setTo}
+        label="Filtrar:"
+      >
         <select
           value={supplierId}
           onChange={(e) => setSupplierId(e.target.value)}
@@ -116,11 +103,11 @@ export function PurchaseHistory({ onRepeat }: Props) {
             Limpiar
           </button>
         )}
-      </div>
+      </DateRangeFilter>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+          <Spinner size="lg" />
         </div>
       ) : !orders || orders.length === 0 ? (
         <EmptyState message="No hay órdenes registradas" />

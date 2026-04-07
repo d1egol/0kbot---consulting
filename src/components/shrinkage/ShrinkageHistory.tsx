@@ -1,7 +1,7 @@
 import { Ban } from 'lucide-react'
 import { useShrinkageList, useVoidShrinkage } from '@/hooks/useShrinkage'
 import { useAuthStore } from '@/store/authStore'
-import { EmptyState, Button, toast } from '@/components/shared'
+import { EmptyState, Button, toast, Spinner } from '@/components/shared'
 import { formatCLP } from '@/utils/currency'
 import { formatDate } from '@/utils/dates'
 import { cn } from '@/utils/cn'
@@ -35,7 +35,7 @@ export function ShrinkageHistory() {
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
+          <Spinner />
         </div>
       ) : !records || records.length === 0 ? (
         <EmptyState message="No hay mermas registradas" />

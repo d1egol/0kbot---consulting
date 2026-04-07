@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useAllLocations, useToggleLocationActive } from '@/hooks/useLocations'
-import { Button, EmptyState, toast, Modal } from '@/components/shared'
+import { Button, EmptyState, toast, Modal, Spinner } from '@/components/shared'
 import { cn } from '@/utils/cn'
 import type { Location } from '@/lib/types'
 import { useCreateLocation, useUpdateLocation } from '@/hooks/useLocations'
@@ -165,7 +165,7 @@ export function LocationManager() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+        <Spinner size="lg" />
       </div>
     )
   }
